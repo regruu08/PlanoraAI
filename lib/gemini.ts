@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { PlanoraEvent, EventBlueprint, BudgetItem, Task, Vendor, Idea } from '@/types';
+import type { PlanoraEvent, EventBlueprint, BudgetItem, Task, Vendor, Idea } from '@/types';
 import { eventBlueprintSchema } from './validation/event';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';

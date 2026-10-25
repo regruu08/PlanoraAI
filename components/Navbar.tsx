@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   Sparkles, 
   CalendarDays, 
@@ -11,13 +11,38 @@ import {
   Gift, 
   Menu, 
   X,
-  ChevronDown
+  ChevronDown,
+  User,
+  LogOut,
+  LogIn,
+  CheckCircle2
 } from 'lucide-react';
+import { isSupabaseConfigured } from '@/lib/supabase/client';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [demoDropdownOpen, setDemoDropdownOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ name?: string; email?: string } | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('planora_user');
+      if (stored) {
+        setCurrentUser(JSON.parse(stored));
+      } else {
+        // Default guest user for seamless demoing
+        setCurrentUser({ name: 'Anuj (Demo)', email: 'anuj@hackathon.dev' });
+      }
+    } catch {}
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('planora_user');
+    setCurrentUser(null);
+    router.push('/login');
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-rose-100/80 bg-white/90 backdrop-blur-md">
@@ -78,14 +103,14 @@ export default function Navbar() {
                     href="/events/demo-wedding-1"
                     className="flex flex-col px-3 py-2 text-sm text-zinc-700 hover:bg-rose-50 hover:text-rose-700"
                   >
-                    <span className="font-medium">💍 Anuj's Wedding</span>
+                    <span className="font-medium">💍 Anuj&apos;s Wedding</span>
                     <span className="text-xs text-zinc-400">Lucknow • 300 guests • ₹8L</span>
                   </Link>
                   <Link
                     href="/events/demo-birthday-2"
                     className="flex flex-col px-3 py-2 text-sm text-zinc-700 hover:bg-amber-50 hover:text-amber-700"
                   >
-                    <span className="font-medium">🎂 Aarav's 8th Birthday</span>
+                    <span className="font-medium">🎂 Aarav&apos;s 8th Birthday</span>
                     <span className="text-xs text-zinc-400">Bangalore • 50 guests • ₹50k</span>
                   </Link>
                   <Link
@@ -106,10 +131,40 @@ export default function Navbar() {
               <PlusCircle className="w-4 h-4" />
               <span>Create Event</span>
             </Link>
+
+            {/* User Pill / Login */}
+            {currentUser ? (
+              <div className="flex items-center gap-2 pl-2 ml-1 border-l border-zinc-200">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 text-xs font-medium text-zinc-700">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                  <span className="max-w-[100px] truncate">{currentUser.name || 'User'}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-lg transition-colors"
+                  title="Sign out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-zinc-600 hover:text-zinc-900 rounded-lg hover:bg-zinc-50"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </Link>
+            )}
           </nav>
 
           {/* Mobile menu button */}
-          <div className="flex md:hidden items-center">
+          <div className="flex md:hidden items-center gap-2">
+            {currentUser && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 font-medium truncate max-w-[110px]">
+                {currentUser.name}
+              </span>
+            )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-zinc-600 hover:bg-zinc-100"
@@ -149,14 +204,14 @@ export default function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-1.5 text-sm text-zinc-600"
             >
-              💍 Anuj's Wedding (Lucknow, ₹8L)
+              💍 Anuj&apos;s Wedding (Lucknow, ₹8L)
             </Link>
             <Link
               href="/events/demo-birthday-2"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-1.5 text-sm text-zinc-600"
             >
-              🎂 Aarav's 8th Birthday (Bangalore, ₹50k)
+              🎂 Aarav&apos;s 8th Birthday (Bangalore, ₹50k)
             </Link>
             <Link
               href="/events/demo-community-3"
@@ -165,6 +220,28 @@ export default function Navbar() {
             >
               🎪 Diwali Community Mela (700 guests, ₹2L)
             </Link>
+          </div>
+          <div className="border-t border-zinc-100 pt-2 flex items-center justify-between px-3">
+            {currentUser ? (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleLogout();
+                }}
+                className="text-xs text-red-600 font-semibold flex items-center gap-1"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out ({currentUser.name})</span>
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-xs text-rose-600 font-semibold"
+              >
+                Sign In / Sign Up
+              </Link>
+            )}
           </div>
         </div>
       )}

@@ -18,7 +18,8 @@ import {
   Store, 
   Lightbulb, 
   Bot,
-  RefreshCw
+  RefreshCw,
+  Printer
 } from 'lucide-react';
 import { applyBlueprintToEvent } from '@/lib/storage';
 
@@ -42,6 +43,12 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
         origin: { y: 0.6 },
       });
     } catch {}
+  };
+
+  const handlePrint = () => {
+    if (typeof window !== 'undefined') {
+      window.print();
+    }
   };
 
   const handleRegeneratePlan = async () => {
@@ -81,7 +88,7 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
   };
 
   return (
-    <div className="bg-white border-b border-zinc-200">
+    <div className="bg-white border-b border-zinc-200 print:border-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
         {/* Top Info Bar */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4">
@@ -99,7 +106,7 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
               <span className="flex items-center gap-1.5 font-medium">
                 <Calendar className="w-4 h-4 text-zinc-400" />
                 {formatDate(event.event_date)}
-                <span className={`ml-1 text-xs px-2 py-0.5 rounded-full font-semibold ${
+                <span className={`ml-1 text-xs px-2 py-0.5 rounded-full font-semibold print:hidden ${
                   isPast 
                     ? 'bg-zinc-100 text-zinc-600' 
                     : daysRemaining <= 7 
@@ -127,17 +134,26 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
             </div>
           </div>
 
-          {/* Action: Regenerate Blueprint */}
-          <div className="flex items-center gap-2">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 print:hidden">
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 transition-colors shadow-xs"
+              title="Print or Save PDF"
+            >
+              <Printer className="w-3.5 h-3.5 text-zinc-500" />
+              <span>Export PDF / Print</span>
+            </button>
+
             <button
               onClick={handleRegeneratePlan}
               disabled={isGenerating}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white shadow-sm shadow-rose-200 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white shadow-sm shadow-rose-200 transition-all disabled:opacity-50"
             >
               {isGenerating ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Synthesizing Plan...</span>
+                  <span>Synthesizing...</span>
                 </>
               ) : (
                 <>
@@ -150,7 +166,7 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pt-2 scrollbar-none border-t border-zinc-100">
+        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pt-2 scrollbar-none border-t border-zinc-100 print:hidden">
           {navTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = pathname === tab.href;

@@ -2,6 +2,14 @@
 
 import { PlanoraEvent, BudgetItem, Task, Vendor, Idea, AIMessage, EventBlueprint } from '@/types';
 import { DEMO_EVENTS, DEMO_BUDGETS, DEMO_TASKS, DEMO_VENDORS, DEMO_IDEAS } from './demo-data';
+import { 
+  saveSupabaseEvent, 
+  saveSupabaseBudgetItem, 
+  saveSupabaseTask, 
+  saveSupabaseVendor, 
+  saveSupabaseIdea, 
+  saveSupabaseAIMessage 
+} from './supabase/db';
 
 const STORAGE_KEYS = {
   EVENTS: 'planora_events_v1',
@@ -59,6 +67,9 @@ export function saveEvent(event: PlanoraEvent): void {
     events.unshift(event);
   }
   localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
+
+  // Async sync to Supabase if configured
+  saveSupabaseEvent(event).catch((err) => console.warn('Supabase sync background notice:', err));
 }
 
 export function deleteEvent(id: string): void {
@@ -93,6 +104,9 @@ export function saveBudgetItem(item: BudgetItem): void {
   }
   map[item.event_id] = items;
   localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(map));
+
+  // Async sync to Supabase if configured
+  saveSupabaseBudgetItem(item).catch(() => {});
 }
 
 export function getTasks(eventId: string): Task[] {
@@ -121,6 +135,9 @@ export function saveTask(task: Task): void {
   }
   map[task.event_id] = items;
   localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(map));
+
+  // Async sync to Supabase if configured
+  saveSupabaseTask(task).catch(() => {});
 }
 
 export function getVendors(eventId: string): Vendor[] {
@@ -149,6 +166,9 @@ export function saveVendor(vendor: Vendor): void {
   }
   map[vendor.event_id] = items;
   localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(map));
+
+  // Async sync to Supabase if configured
+  saveSupabaseVendor(vendor).catch(() => {});
 }
 
 export function getIdeas(eventId: string): Idea[] {
@@ -177,6 +197,9 @@ export function saveIdea(idea: Idea): void {
   }
   map[idea.event_id] = items;
   localStorage.setItem(STORAGE_KEYS.IDEAS, JSON.stringify(map));
+
+  // Async sync to Supabase if configured
+  saveSupabaseIdea(idea).catch(() => {});
 }
 
 export function getAIMessages(eventId: string): AIMessage[] {
@@ -199,6 +222,9 @@ export function saveAIMessage(msg: AIMessage): void {
     items.push(msg);
     map[msg.event_id] = items;
     localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(map));
+
+    // Async sync to Supabase if configured
+    saveSupabaseAIMessage(msg).catch(() => {});
   } catch {}
 }
 
@@ -285,6 +311,12 @@ export function applyBlueprintToEvent(eventId: string, blueprint: EventBlueprint
     const iMap = iRaw ? JSON.parse(iRaw) : {};
     iMap[eventId] = newIdeas;
     localStorage.setItem(STORAGE_KEYS.IDEAS, JSON.stringify(iMap));
+
+    // Also trigger Supabase sync in background
+    newBudgets.forEach((b) => saveSupabaseBudgetItem(b).catch(() => {}));
+    newTasks.forEach((t) => saveSupabaseTask(t).catch(() => {}));
+    newVendors.forEach((v) => saveSupabaseVendor(v).catch(() => {}));
+    newIdeas.forEach((i) => saveSupabaseIdea(i).catch(() => {}));
   } catch (err) {
     console.error('Error applying blueprint:', err);
   }
