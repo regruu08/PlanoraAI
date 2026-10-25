@@ -1,13 +1,19 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-
-const eslintConfig = defineConfig([
-  globalIgnores([
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-    "node_modules/**"
-  ]),
-]);
-
-export default eslintConfig;
+import { FlatCompat } from "@eslint/eslintrc";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const compat = new FlatCompat({
+  baseDirectory: path.dirname(fileURLToPath(import.meta.url)),
+});
+const config = [
+  {
+    ignores: [
+      ".next*/**",
+      "out/**",
+      "build/**",
+      "node_modules/**",
+      "next-env.d.ts",
+    ],
+  },
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+];
+export default config;

@@ -19,7 +19,8 @@ import {
   Lightbulb, 
   Bot,
   RefreshCw,
-  Printer
+  Printer,
+  ChevronRight
 } from 'lucide-react';
 import { applyBlueprintToEvent } from '@/lib/storage';
 
@@ -52,6 +53,7 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
   };
 
   const handleRegeneratePlan = async () => {
+    if (!confirm('Regenerate AI plan? Gemini will recalculate budget allocations, reverse timelines, and ideas based on current event context.')) return;
     setIsGenerating(true);
     try {
       const res = await fetch(`/api/events/${event.id}/generate-plan`, {
@@ -88,25 +90,37 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
   };
 
   return (
-    <div className="bg-white border-b border-zinc-200 print:border-none">
+    <div className="bg-white border-b border-zinc-200 print:border-none shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+        
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center gap-1.5 text-xs text-zinc-400 mb-3 print:hidden">
+          <Link href="/dashboard" className="hover:text-zinc-700 transition-colors">
+            Dashboard
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5 text-zinc-300" />
+          <span className="text-zinc-600 font-semibold truncate max-w-[200px]">
+            {event.name}
+          </span>
+        </div>
+
         {/* Top Info Bar */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4">
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border uppercase tracking-wider ${typeColorMap[event.event_type] || 'bg-zinc-100 text-zinc-700'}`}>
+              <span className={`px-2.5 py-0.5 text-xs font-extrabold rounded-full border uppercase tracking-wider ${typeColorMap[event.event_type] || 'bg-zinc-100 text-zinc-700'}`}>
                 {event.event_type}
               </span>
-              <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
                 {event.name}
               </h1>
             </div>
 
             <div className="flex items-center gap-4 mt-2 text-sm text-zinc-600 flex-wrap">
-              <span className="flex items-center gap-1.5 font-medium">
+              <span className="flex items-center gap-1.5 font-semibold text-zinc-800">
                 <Calendar className="w-4 h-4 text-zinc-400" />
                 {formatDate(event.event_date)}
-                <span className={`ml-1 text-xs px-2 py-0.5 rounded-full font-semibold print:hidden ${
+                <span className={`ml-1 text-xs px-2 py-0.5 rounded-full font-bold print:hidden ${
                   isPast 
                     ? 'bg-zinc-100 text-zinc-600' 
                     : daysRemaining <= 7 
@@ -127,7 +141,7 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
                 {event.guest_count} guests
               </span>
 
-              <span className="flex items-center gap-1.5 font-semibold text-emerald-700">
+              <span className="flex items-center gap-1.5 font-extrabold text-emerald-700">
                 <IndianRupee className="w-4 h-4 text-emerald-600" />
                 {formatINR(event.total_budget)}
               </span>
@@ -138,7 +152,7 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
           <div className="flex items-center gap-2 print:hidden">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 transition-colors shadow-xs"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 transition-colors shadow-xs"
               title="Print or Save PDF"
             >
               <Printer className="w-3.5 h-3.5 text-zinc-500" />
@@ -148,7 +162,7 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
             <button
               onClick={handleRegeneratePlan}
               disabled={isGenerating}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white shadow-sm shadow-rose-200 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white shadow-sm shadow-rose-200 transition-all disabled:opacity-50"
             >
               {isGenerating ? (
                 <>
@@ -175,16 +189,16 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3.5 py-2.5 text-sm font-bold rounded-t-xl border-b-2 transition-all whitespace-nowrap ${
                   isActive
-                    ? 'border-rose-600 text-rose-600 bg-rose-50/50'
+                    ? 'border-rose-600 text-rose-600 bg-rose-50/60'
                     : 'border-transparent text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
                 }`}
               >
                 <Icon className={`w-4 h-4 ${tab.highlight && !isActive ? 'text-amber-500' : ''}`} />
                 <span>{tab.label}</span>
                 {tab.highlight && (
-                  <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-full">
+                  <span className="px-1.5 py-0.5 text-[10px] font-extrabold bg-amber-100 text-amber-700 rounded-full">
                     AI
                   </span>
                 )}

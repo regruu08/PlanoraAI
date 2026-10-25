@@ -1,48 +1,49 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { askAICopilot } from '@/lib/gemini';
-import { PlanoraEvent, BudgetItem, Task, Vendor, Idea } from '@/types';
-
+import { NextRequest, NextResponse } from "next/server";
+import { askAICopilot } from "@/lib/gemini";
+import { chatRequestSchema } from "@/lib/validation/event";
 export async function POST(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
+  let body;
   try {
-    const { id } = await context.params;
-    const body = await req.json();
-
-    const {
-      event,
-      budgets = [],
-      tasks = [],
-      vendors = [],
-      ideas = [],
-      message,
-    } = body as {
-      event: PlanoraEvent;
-      budgets: BudgetItem[];
-      tasks: Task[];
-      vendors: Vendor[];
-      ideas: Idea[];
-      message: string;
-    };
-
-    if (!message || !event) {
-      return NextResponse.json({ error: 'Message and event context are required' }, { status: 400 });
-    }
-
-    const reply = await askAICopilot(
-      event,
-      { budgets, tasks, vendors, ideas },
-      message
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Send a valid JSON request." },
+      { status: 400 },
     );
-
+  }
+  const { id } = await context.params;
+  const parsed = chatRequestSchema.safeParse(body);
+  if (!parsed.success || parsed.data.event.id !== id)
+    return NextResponse.json(
+      { error: "Check your message and event details, then try again." },
+      { status: 400 },
+    );
+  const { event, message, ...planning } = parsed.data;
+  if (
+    [
+      ...planning.budgets,
+      ...planning.tasks,
+      ...planning.vendors,
+      ...planning.ideas,
+    ].some((item) => item.event_id !== id)
+  )
+    return NextResponse.json(
+      { error: "Planning items must belong to this event." },
+      { status: 400 },
+    );
+  try {
     return NextResponse.json({
       success: true,
       eventId: id,
-      reply,
+      reply: await askAICopilot(event, planning, message),
     });
-  } catch (error) {
-    console.error('Error in AI copilot chat:', error);
-    return NextResponse.json({ error: 'Failed to process AI chat message' }, { status: 500 });
+  } catch {
+    return NextResponse.json(
+      { error: "Your planning companion could not respond. Please try again." },
+      { status: 502 },
+    );
   }
 }

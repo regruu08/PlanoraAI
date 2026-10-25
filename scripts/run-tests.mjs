@@ -1,156 +1,318 @@
-import { z } from 'zod';
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import vm from "node:vm";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
-let passed = 0;
-let failed = 0;
-
-function assert(condition, testName) {
-  if (condition) {
-    console.log(`  \x1b[32m✓ PASS\x1b[0m ${testName}`);
+// Load the actual TypeScript modules without emitting files or calling live services.
+const require = createRequire(import.meta.url);
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const cache = new Map();
+process.env.GEMINI_API_KEY = "";
+process.env.NEXT_PUBLIC_SUPABASE_URL = "";
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "";
+function load(relative) {
+  const filename = path.resolve(root, relative);
+  if (cache.has(filename)) return cache.get(filename).exports;
+  const sandboxModule = { exports: {} };
+  cache.set(filename, sandboxModule);
+  const source = fs.readFileSync(filename, "utf8");
+  const code = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2020,
+      esModuleInterop: true,
+    },
+  }).outputText;
+  const localRequire = (name) =>
+    name.startsWith("@/")
+      ? load(`${name.slice(2)}.ts`)
+      : name.startsWith(".")
+        ? load(`${path.resolve(path.dirname(filename), name)}.ts`)
+        : require(name);
+  vm.runInThisContext(`(function(require,module,exports){${code}\n})`, {
+    filename,
+  })(localRequire, sandboxModule, sandboxModule.exports);
+  return sandboxModule.exports;
+}
+const validation = load("lib/validation/event.ts");
+const ai = load("lib/gemini.ts");
+const utils = load("lib/utils.ts");
+let passed = 0,
+  failed = 0;
+async function test(name, run) {
+  try {
+    await run();
+    console.log(`PASS ${name}`);
     passed++;
-  } else {
-    console.error(`  \x1b[31m✗ FAIL\x1b[0m ${testName}`);
+  } catch (error) {
+    console.error(`FAIL ${name}: ${error.message}`);
     failed++;
   }
 }
-
-console.log('\n\x1b[1m=== PLANORA AI: HACKATHON ROBUSTNESS & EDGE CASE TESTS ===\x1b[0m\n');
-
-// 1. Zod Form Schema Definition
-const eventFormSchema = z.object({
-  name: z.string().min(2).max(100),
-  event_type: z.enum(['wedding', 'birthday', 'community']),
-  event_date: z.string().refine((val) => {
-    const selected = new Date(val);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return !isNaN(selected.getTime()) && selected >= today;
-  }),
-  location: z.string().min(2),
-  guest_count: z.coerce.number().int().min(1).max(100000),
-  total_budget: z.coerce.number().min(1000),
-});
-
-// 2. Blueprint Schema Definition
-const eventBlueprintSchema = z.object({
-  budgetPlan: z.array(z.object({
-    category: z.string().min(1),
-    allocatedAmount: z.number().nonnegative(),
-    priority: z.enum(['low', 'medium', 'high', 'critical']),
-    reason: z.string().min(1),
-  })).min(3),
-  timeline: z.array(z.object({
-    title: z.string().min(1),
-    description: z.string().min(1),
-    dueDate: z.string().min(1),
-    priority: z.enum(['low', 'medium', 'high', 'critical']),
-  })).min(3),
-  vendors: z.array(z.object({
-    vendorType: z.string().min(1),
-    estimatedBudget: z.number().nonnegative(),
-    checklist: z.array(z.object({ label: z.string().min(1) })).min(1),
-  })).min(2),
-  personalizedIdeas: z.array(z.object({
-    category: z.enum(['theme', 'decor', 'food', 'activity', 'entertainment', 'guest_experience', 'other']),
-    title: z.string().min(1),
-    description: z.string().min(1),
-    reason: z.string().min(1),
-  })).min(2),
-  nextActions: z.array(z.string().min(1)).min(2),
-});
-
-// Test 1: Reject Budget = 0
-const res1 = eventFormSchema.safeParse({
-  name: "Anuj's Wedding",
-  event_type: 'wedding',
-  event_date: '2026-12-15',
-  location: 'Lucknow',
-  guest_count: 100,
-  total_budget: 0,
-});
-assert(!res1.success, 'Test 1: Rejects zero budget (total_budget = 0)');
-
-// Test 2: Reject Negative budget
-const res2 = eventFormSchema.safeParse({
-  name: 'Birthday Party',
-  event_type: 'birthday',
-  event_date: '2026-12-15',
-  location: 'Bangalore',
-  guest_count: 50,
-  total_budget: -5000,
-});
-assert(!res2.success, 'Test 2: Rejects negative budget');
-
-// Test 3: Reject Guest Count = 0
-const res3 = eventFormSchema.safeParse({
-  name: 'Community Mela',
-  event_type: 'community',
-  event_date: '2026-12-15',
-  location: 'Lucknow',
-  guest_count: 0,
-  total_budget: 50000,
-});
-assert(!res3.success, 'Test 3: Rejects zero guest count');
-
-// Test 4: Reject Past Dates
-const yesterday = new Date();
-yesterday.setDate(yesterday.getDate() - 2);
-const res4 = eventFormSchema.safeParse({
-  name: 'Past Event',
-  event_type: 'wedding',
-  event_date: yesterday.toISOString().split('T')[0],
-  location: 'Lucknow',
-  guest_count: 100,
-  total_budget: 500000,
-});
-assert(!res4.success, 'Test 4: Rejects past event dates');
-
-// Test 5: Valid Wedding Event
-const res5 = eventFormSchema.safeParse({
-  name: "Anuj's Wedding",
-  event_type: 'wedding',
-  event_date: '2026-12-15',
-  location: 'Lucknow',
+const later = new Date();
+later.setDate(later.getDate() + 90);
+const tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+const base = {
+  id: "test-event",
+  name: "A lovely celebration",
+  event_type: "wedding",
+  event_date: utils.localDateString(later),
+  location: "Lucknow",
   guest_count: 300,
   total_budget: 800000,
-});
-assert(res5.success, "Test 5: Successfully validates full wedding event (Anuj's Wedding)");
-
-// Test 6: Blueprint Budget Allocation Limits
-const sampleBlueprint = {
-  budgetPlan: [
-    { category: 'Venue', allocatedAmount: 250000, priority: 'critical', reason: 'Banquet' },
-    { category: 'Catering', allocatedAmount: 240000, priority: 'critical', reason: 'Buffet' },
-    { category: 'Photo', allocatedAmount: 100000, priority: 'high', reason: 'Drone' },
-    { category: 'Decor', allocatedAmount: 90000, priority: 'high', reason: 'Floral' },
-  ],
-  timeline: [
-    { title: 'Book Hall', description: 'Advance token', dueDate: '2026-11-01', priority: 'critical' },
-    { title: 'Tasting', description: 'Menu sample', dueDate: '2026-11-10', priority: 'high' },
-    { title: 'Invites', description: 'WhatsApp links', dueDate: '2026-11-15', priority: 'medium' },
-  ],
-  vendors: [
-    { vendorType: 'Venue', estimatedBudget: 250000, checklist: [{ label: 'Verify AC' }] },
-    { vendorType: 'Catering', estimatedBudget: 240000, checklist: [{ label: 'Server ratio' }] },
-  ],
-  personalizedIdeas: [
-    { category: 'guest_experience', title: 'Itar Bar', description: 'Fragrance', reason: 'Lucknow heritage' },
-    { category: 'entertainment', title: 'Shehnai', description: 'Live', reason: 'Acoustic' },
-  ],
-  nextActions: [
-    'Book venue immediately',
-    'Schedule food tasting',
-  ],
+  created_at: new Date().toISOString(),
 };
-
-const totalAllocated = sampleBlueprint.budgetPlan.reduce((acc, b) => acc + b.allocatedAmount, 0);
-assert(totalAllocated <= 800000, 'Test 6: Blueprint budget allocations do not exceed total budget');
-assert(sampleBlueprint.timeline.length >= 3, 'Test 7: Reverse timeline has at least 3 sequenced milestones');
-assert(sampleBlueprint.vendors.length >= 2, 'Test 8: Vendors module includes verified checklists');
-assert(sampleBlueprint.personalizedIdeas.length >= 2, 'Test 9: Personalized ideas tailored to event context');
-
-// Test 10: Strict Schema Conformance
-const validBlueprintRes = eventBlueprintSchema.safeParse(sampleBlueprint);
-assert(validBlueprintRes.success, 'Test 10: Gemini Event Blueprint strictly conforms to Zod schema');
-
-console.log(`\n\x1b[1mSummary: ${passed} passed, ${failed} failed.\x1b[0m\n`);
-if (failed > 0) process.exit(1);
+for (const [name, patch] of [
+  ["zero budget", { total_budget: 0 }],
+  ["negative budget", { total_budget: -1 }],
+  ["zero guests", { guest_count: 0 }],
+  ["negative guests", { guest_count: -1 }],
+  ["fractional guests", { guest_count: 1.5 }],
+  ["too many guests", { guest_count: 100001 }],
+  ["past date", { event_date: "2000-01-01" }],
+  ["impossible date", { event_date: "2099-02-30" }],
+  ["blank name", { name: "  " }],
+  ["blank city", { location: "  " }],
+  ["invalid event type", { event_type: "other" }],
+  ["infinite budget", { total_budget: Infinity }],
+])
+  await test(`Form rejects ${name}`, () =>
+    assert.equal(
+      validation.eventFormSchema.safeParse({ ...base, ...patch }).success,
+      false,
+    ));
+await test("Form accepts missing optional fields", () =>
+  assert.ok(validation.eventFormSchema.safeParse(base).success));
+await test("Form accepts 100000 guests", () =>
+  assert.ok(
+    validation.eventFormSchema.safeParse({ ...base, guest_count: 100000 })
+      .success,
+  ));
+await test("Form trims required text", () =>
+  assert.equal(
+    validation.eventFormSchema.parse({ ...base, name: "  Wedding  " }).name,
+    "Wedding",
+  ));
+for (const type of ["wedding", "birthday", "community"]) {
+  for (const budget of [1000, 9999.99, 50000, 800000]) {
+    const event = { ...base, event_type: type, total_budget: budget };
+    await test(`${type} blueprint valid and within INR ${budget}`, () => {
+      const plan = validation.validateBlueprintForEvent(
+        ai.generateProceduralBlueprint(event),
+        event,
+      );
+      assert.ok(
+        plan.budgetPlan.reduce((s, b) => s + b.allocatedAmount, 0) <=
+          budget + 0.01,
+      );
+      assert.ok(plan.vendors.every((v) => v.checklist.length > 0));
+      assert.ok(plan.personalizedIdeas.length > 0);
+    });
+  }
+  await test(`${type} tomorrow has no deadlines after the event`, () => {
+    const event = {
+      ...base,
+      event_type: type,
+      event_date: utils.localDateString(tomorrow),
+    };
+    assert.ok(
+      ai
+        .generateProceduralBlueprint(event)
+        .timeline.every(
+          (t) =>
+            t.dueDate <= event.event_date &&
+            t.dueDate >= utils.localDateString(),
+        ),
+    );
+  });
+}
+const plan = ai.generateProceduralBlueprint(base);
+await test("AI validator rejects over-budget allocation", () => {
+  const bad = structuredClone(plan);
+  bad.budgetPlan[0].allocatedAmount = 900000;
+  assert.throws(() => validation.validateBlueprintForEvent(bad, base));
+});
+await test("AI validator rejects invalid task date", () => {
+  const bad = structuredClone(plan);
+  bad.timeline[0].dueDate = "not-a-date";
+  assert.throws(() => validation.validateBlueprintForEvent(bad, base));
+});
+await test("AI validator rejects task after event", () => {
+  const bad = structuredClone(plan);
+  bad.timeline[0].dueDate = "2099-12-31";
+  assert.throws(() => validation.validateBlueprintForEvent(bad, base));
+});
+await test("AI validator rejects empty checklist", () => {
+  const bad = structuredClone(plan);
+  bad.vendors[0].checklist = [];
+  assert.throws(() => validation.validateBlueprintForEvent(bad, base));
+});
+await test("AI validator rejects no ideas", () => {
+  const bad = structuredClone(plan);
+  bad.personalizedIdeas = [];
+  assert.throws(() => validation.validateBlueprintForEvent(bad, base));
+});
+await test("AI validator rejects malformed JSON object", () =>
+  assert.throws(() => validation.validateBlueprintForEvent({}, base)));
+const context = { budgets: [], tasks: [], vendors: [], ideas: [] };
+await test("Copilot uses actual guest count for catering advice", async () => {
+  const reply = await ai.askAICopilot(
+    { ...base, guest_count: 50 },
+    context,
+    "food",
+  );
+  assert.ok(reply.includes("50 guests"));
+  assert.ok(!reply.includes("300 guests"));
+});
+await test("Task urgency prioritizes overdue work", () => {
+  const task = {
+    id: "t",
+    event_id: base.id,
+    title: "Task",
+    description: "",
+    created_at: base.created_at,
+    status: "pending",
+  };
+  const sorted = utils.sortTasksByUrgency([
+    { ...task, priority: "critical", due_date: base.event_date },
+    { ...task, priority: "medium", due_date: "2000-01-01" },
+  ]);
+  assert.equal(sorted[0].due_date, "2000-01-01");
+});
+await test("Percent calculations handle zero and overflow", () => {
+  assert.equal(utils.calculatePercentage(1, 0), 0);
+  assert.equal(utils.calculatePercentage(200, 100), 100);
+});
+const memory = new Map();
+globalThis.window = {};
+globalThis.localStorage = {
+  getItem: (key) => memory.get(key) ?? null,
+  setItem: (key, value) => memory.set(key, value),
+  removeItem: (key) => memory.delete(key),
+};
+const storage = load("lib/storage.ts");
+storage.saveEvent(base);
+storage.applyBlueprintToEvent(base.id, plan);
+const budget = storage.getBudgets(base.id)[0];
+storage.saveBudgetItem({ ...budget, actual_amount: 12345 });
+const task = storage.getTasks(base.id)[0];
+storage.saveTask({ ...task, status: "completed" });
+const vendor = storage.getVendors(base.id)[0];
+storage.saveVendor({
+  ...vendor,
+  status: "confirmed",
+  checklist: vendor.checklist.map((c) => ({ ...c, is_completed: true })),
+});
+const idea = storage.getIdeas(base.id)[0];
+storage.saveIdea({ ...idea, is_saved: true });
+await test("Storage preserves expenses after reload", () =>
+  assert.equal(storage.getBudgets(base.id)[0].actual_amount, 12345));
+storage.applyBlueprintToEvent(base.id, plan);
+await test("Refresh preserves actual spending", () =>
+  assert.equal(storage.getBudgets(base.id)[0].actual_amount, 12345));
+await test("Refresh preserves completed tasks", () =>
+  assert.equal(storage.getTasks(base.id)[0].status, "completed"));
+await test("Refresh preserves vendor status and checklist", () => {
+  const v = storage.getVendors(base.id)[0];
+  assert.equal(v.status, "confirmed");
+  assert.ok(v.checklist.every((c) => c.is_completed));
+});
+await test("Refresh preserves saved ideas", () =>
+  assert.equal(storage.getIdeas(base.id)[0].is_saved, true));
+await test("Refresh does not duplicate tasks", () =>
+  assert.equal(storage.getTasks(base.id).length, plan.timeline.length));
+await test("Invalid blueprint does not replace saved data", () => {
+  assert.throws(() => storage.applyBlueprintToEvent(base.id, {}));
+  assert.equal(storage.getBudgets(base.id)[0].actual_amount, 12345);
+});
+await test("Deletion removes event and all child data", () => {
+  storage.deleteEvent(base.id);
+  assert.equal(storage.getEventById(base.id), undefined);
+  assert.deepEqual(storage.getBudgets(base.id), []);
+  assert.deepEqual(storage.getTasks(base.id), []);
+  assert.deepEqual(storage.getVendors(base.id), []);
+  assert.deepEqual(storage.getIdeas(base.id), []);
+});
+const generate = load("app/api/events/[id]/generate-plan/route.ts");
+const params = { params: Promise.resolve({ id: base.id }) };
+await test("Generation route rejects invalid event input", async () =>
+  assert.equal(
+    (
+      await generate.POST(
+        { json: async () => ({ event: { ...base, total_budget: -1 } }) },
+        params,
+      )
+    ).status,
+    400,
+  ));
+await test("Generation route rejects mismatched ID", async () =>
+  assert.equal(
+    (
+      await generate.POST(
+        { json: async () => ({ event: { ...base, id: "other" } }) },
+        params,
+      )
+    ).status,
+    400,
+  ));
+await test("Generation route rejects malformed JSON", async () =>
+  assert.equal(
+    (
+      await generate.POST(
+        {
+          json: async () => {
+            throw new SyntaxError();
+          },
+        },
+        params,
+      )
+    ).status,
+    400,
+  ));
+await test("Generation route returns validated demo blueprint", async () => {
+  const response = await generate.POST(
+    { json: async () => ({ event: base }) },
+    params,
+  );
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.mode, "demo");
+  validation.validateBlueprintForEvent(body.blueprint, base);
+});
+const chat = load("app/api/events/[id]/ai/chat/route.ts");
+await test("Chat route rejects empty message", async () =>
+  assert.equal(
+    (
+      await chat.POST(
+        { json: async () => ({ event: base, message: " " }) },
+        params,
+      )
+    ).status,
+    400,
+  ));
+await test("Chat route rejects non-string message", async () =>
+  assert.equal(
+    (
+      await chat.POST(
+        { json: async () => ({ event: base, message: {} }) },
+        params,
+      )
+    ).status,
+    400,
+  ));
+await test("Chat route returns contextual response", async () => {
+  const response = await chat.POST(
+    { json: async () => ({ event: base, message: "budget" }) },
+    params,
+  );
+  assert.equal(response.status, 200);
+  assert.ok((await response.json()).reply.includes(base.name));
+});
+console.log(
+  `\n${passed} passed, ${failed} failed. Tests run against application modules with no live API calls.`,
+);
+if (failed) process.exitCode = 1;

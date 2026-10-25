@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { eventFormSchema } from '@/lib/validation/event';
-import { PlanoraEvent } from '@/types';
+import { eventFormSchema } from "@/lib/validation/event";
+import { PlanoraEvent } from "@/types";
+import { NextRequest, NextResponse } from "next/server";
 
 // Mock in-memory store for server-side if database isn't connected
 const serverEvents: PlanoraEvent[] = [];
@@ -16,8 +16,8 @@ export async function POST(req: NextRequest) {
 
     if (!validated.success) {
       return NextResponse.json(
-        { error: 'Validation failed', details: validated.error.format() },
-        { status: 400 }
+        { error: "Validation failed", details: validated.error.format() },
+        { status: 400 },
       );
     }
 
@@ -41,9 +41,15 @@ export async function POST(req: NextRequest) {
 
     serverEvents.unshift(newEvent);
 
-    return NextResponse.json({ success: true, event: newEvent }, { status: 201 });
+    return NextResponse.json(
+      { success: true, event: newEvent },
+      { status: 201 },
+    );
   } catch (error) {
-    console.error('Error creating event:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Error creating event:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

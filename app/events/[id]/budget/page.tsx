@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use, useEffect, useState } from 'react';
+import React, { use, useCallback, useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import EventHeader from '@/components/EventHeader';
@@ -8,17 +8,14 @@ import { PlanoraEvent, BudgetItem, Priority } from '@/types';
 import { getEventById, getBudgets, saveBudgetItem } from '@/lib/storage';
 import { formatINR, calculatePercentage } from '@/lib/utils';
 import { 
-  Wallet, 
   Plus, 
-  IndianRupee, 
   AlertTriangle, 
-  CheckCircle2, 
   TrendingDown, 
   TrendingUp,
-  Tag,
   Edit2,
   Save,
-  X
+  X,
+  Lightbulb
 } from 'lucide-react';
 
 export default function BudgetPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,27 +27,27 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editActual, setEditActual] = useState<number>(0);
   
-  // New item modal/form
+  // New item modal
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   const [newAllocated, setNewAllocated] = useState<number | string>('');
   const [newPriority, setNewPriority] = useState<Priority>('medium');
   const [newReason, setNewReason] = useState('');
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     const evt = getEventById(eventId);
     if (evt) {
       setEvent(evt);
       setBudgets(getBudgets(eventId));
     }
-  };
+  }, [eventId]);
 
   useEffect(() => {
     loadData();
-  }, [eventId]);
+  }, [loadData]);
 
   if (!event) {
-    return <div className="p-8 text-center text-zinc-400">Loading budget...</div>;
+    return <div className="p-8 text-center text-zinc-400 font-medium">Loading budget planner...</div>;
   }
 
   // Calculations
@@ -86,7 +83,7 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
       allocated_amount: Number(newAllocated),
       actual_amount: 0,
       priority: newPriority,
-      reason: newReason || 'User created budget item',
+      reason: newReason || 'Custom user expense',
       created_at: new Date().toISOString(),
     };
 
@@ -105,6 +102,17 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
     low: 'bg-zinc-100 text-zinc-700 border-zinc-200',
   };
 
+  // Slices for visual distribution
+  const categoryColors = [
+    'bg-rose-500',
+    'bg-amber-500',
+    'bg-blue-500',
+    'bg-emerald-500',
+    'bg-purple-500',
+    'bg-pink-500',
+    'bg-indigo-500',
+  ];
+
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50/50">
       <Navbar />
@@ -115,85 +123,117 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
         {/* Budget KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           
-          <div className="p-5 rounded-2xl bg-white border border-zinc-200 shadow-sm">
-            <span className="text-xs uppercase font-bold tracking-wider text-zinc-400 block mb-1">
+          <div className="p-6 rounded-3xl bg-white border border-zinc-200 shadow-sm">
+            <span className="text-xs uppercase font-extrabold tracking-wider text-zinc-400 block mb-1">
               Total Budget
             </span>
-            <div className="text-2xl font-black text-zinc-900">
+            <div className="text-2xl font-black text-zinc-900 tracking-tight">
               {formatINR(event.total_budget)}
             </div>
-            <p className="text-xs text-zinc-500 mt-1">Set during event initialization</p>
+            <p className="text-xs text-zinc-500 mt-1 font-medium">Set during event planning</p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white border border-zinc-200 shadow-sm">
-            <span className="text-xs uppercase font-bold tracking-wider text-zinc-400 block mb-1">
+          <div className="p-6 rounded-3xl bg-white border border-zinc-200 shadow-sm">
+            <span className="text-xs uppercase font-extrabold tracking-wider text-zinc-400 block mb-1">
               Allocated by AI
             </span>
-            <div className={`text-2xl font-black ${isOverAllocated ? 'text-red-600' : 'text-blue-600'}`}>
+            <div className={`text-2xl font-black tracking-tight ${isOverAllocated ? 'text-red-600' : 'text-blue-600'}`}>
               {formatINR(totalAllocated)}
             </div>
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-xs text-zinc-500 mt-1 font-medium">
               {calculatePercentage(totalAllocated, event.total_budget)}% of total budget
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white border border-zinc-200 shadow-sm">
-            <span className="text-xs uppercase font-bold tracking-wider text-zinc-400 block mb-1">
+          <div className="p-6 rounded-3xl bg-white border border-zinc-200 shadow-sm">
+            <span className="text-xs uppercase font-extrabold tracking-wider text-zinc-400 block mb-1">
               Actual Expenses
             </span>
-            <div className={`text-2xl font-black ${isOverSpent ? 'text-red-600' : 'text-zinc-900'}`}>
+            <div className={`text-2xl font-black tracking-tight ${isOverSpent ? 'text-red-600' : 'text-zinc-900'}`}>
               {formatINR(totalActual)}
             </div>
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-xs text-zinc-500 mt-1 font-medium">
               {calculatePercentage(totalActual, event.total_budget)}% spent so far
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white border border-zinc-200 shadow-sm">
-            <span className="text-xs uppercase font-bold tracking-wider text-zinc-400 block mb-1">
-              Remaining Funds
+          <div className="p-6 rounded-3xl bg-white border border-zinc-200 shadow-sm">
+            <span className="text-xs uppercase font-extrabold tracking-wider text-zinc-400 block mb-1">
+              Remaining Balance
             </span>
-            <div className={`text-2xl font-black ${remaining < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+            <div className={`text-2xl font-black tracking-tight ${remaining < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
               {formatINR(remaining)}
             </div>
-            <p className="text-xs text-zinc-500 mt-1">
-              {remaining < 0 ? 'Budget deficit!' : 'Available for contingencies'}
+            <p className="text-xs text-zinc-500 mt-1 font-medium">
+              {remaining < 0 ? 'Budget deficit!' : 'Available for buffers'}
             </p>
           </div>
 
         </div>
 
-        {/* Warning Alert if Over Budget */}
+        {/* Visual Allocation Distribution Bar */}
+        <div className="p-6 rounded-3xl bg-white border border-zinc-200 shadow-sm space-y-3">
+          <div className="flex items-center justify-between text-xs font-bold text-zinc-700">
+            <span>Visual Category Allocation</span>
+            <span>{calculatePercentage(totalAllocated, event.total_budget)}% Allocated</span>
+          </div>
+
+          <div className="h-3 w-full bg-zinc-100 rounded-full overflow-hidden flex">
+            {budgets.map((b, idx) => {
+              const pct = (b.allocated_amount / (totalAllocated || 1)) * 100;
+              const color = categoryColors[idx % categoryColors.length];
+              return (
+                <div
+                  key={b.id}
+                  className={`${color} h-full transition-all`}
+                  style={{ width: `${pct}%` }}
+                  title={`${b.category}: ${formatINR(b.allocated_amount)}`}
+                />
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-zinc-500 font-medium">
+            {budgets.slice(0, 5).map((b, idx) => (
+              <span key={b.id} className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${categoryColors[idx % categoryColors.length]}`} />
+                <span>{b.category}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Overspending Warning Alert */}
         {isOverSpent && (
           <div className="p-4 rounded-2xl bg-red-50 border border-red-200 flex items-center gap-3 text-red-800 text-sm">
             <AlertTriangle className="w-5 h-5 shrink-0 text-red-600" />
             <div>
-              <span className="font-bold">Overspending Alert:</span> You have exceeded your total event budget by {formatINR(Math.abs(remaining))}. Ask the AI Copilot to suggest cost-cutting trade-offs in Decor or Catering!
+              <span className="font-bold">Overspending Alert:</span> You have exceeded your total budget by {formatINR(Math.abs(remaining))}. Ask the AI Copilot to suggest cost optimizations in Decor or Catering!
             </div>
           </div>
         )}
 
-        {/* Action Header */}
+        {/* Action Header & Add Expense */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-zinc-900">Category Allocations & Spending</h2>
+            <h2 className="text-xl font-extrabold text-zinc-900 tracking-tight">Category Allocations &amp; Spend Log</h2>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Click &quot;Edit Actual&quot; on any item to log real vendor payments and quotes.
+              Click &quot;Edit Actual&quot; on any item to log verified vendor payments and quotes.
             </p>
           </div>
 
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-zinc-900 text-white hover:bg-zinc-800 transition-colors shadow-xs"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-zinc-900 text-white hover:bg-zinc-800 transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4" />
             <span>Add Custom Expense</span>
           </button>
         </div>
 
-        {/* Add Custom Item Modal / Panel */}
+        {/* Add Custom Item Modal */}
         {showAddForm && (
-          <form onSubmit={handleAddItem} className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-sm space-y-4 animate-in fade-in">
+          <form onSubmit={handleAddItem} className="p-6 rounded-3xl bg-white border border-zinc-200 shadow-sm space-y-4 animate-in fade-in">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
               <h3 className="font-bold text-sm text-zinc-900">Add New Category Expense</h3>
               <button
@@ -207,7 +247,7 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Category Name</label>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Category Name</label>
                 <input
                   type="text"
                   required
@@ -219,7 +259,7 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Allocated Budget (₹)</label>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Allocated Budget (₹)</label>
                 <input
                   type="number"
                   required
@@ -232,7 +272,7 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Priority</label>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Priority</label>
                 <select
                   value={newPriority}
                   onChange={(e) => setNewPriority(e.target.value as Priority)}
@@ -246,7 +286,7 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
               </div>
 
               <div className="sm:col-span-3">
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Reason / Notes</label>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Reason / Notes</label>
                 <input
                   type="text"
                   placeholder="e.g. 2 tempo travellers for airport pickup and venue drop"
@@ -261,13 +301,13 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 hover:bg-zinc-100"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-600 hover:bg-zinc-100"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 text-white hover:bg-rose-700"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700"
               >
                 Save Category
               </button>
@@ -275,11 +315,11 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
           </form>
         )}
 
-        {/* Budget Items Table */}
+        {/* Budget Table */}
         <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50 border-b border-zinc-200 text-xs uppercase font-bold text-zinc-500">
+              <thead className="bg-zinc-50 border-b border-zinc-200 text-xs uppercase font-extrabold text-zinc-500">
                 <tr>
                   <th className="py-4 px-6">Category</th>
                   <th className="py-4 px-6">Priority</th>
@@ -305,24 +345,24 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
                       </td>
 
                       <td className="py-4 px-6">
-                        <span className={`px-2.5 py-0.5 text-[11px] font-bold rounded-full border uppercase tracking-wider ${priorityColors[item.priority]}`}>
+                        <span className={`px-2.5 py-0.5 text-[11px] font-extrabold rounded-full border uppercase tracking-wider ${priorityColors[item.priority]}`}>
                           {item.priority}
                         </span>
                       </td>
 
-                      <td className="py-4 px-6 font-bold text-zinc-900">
+                      <td className="py-4 px-6 font-extrabold text-zinc-900">
                         {formatINR(item.allocated_amount)}
                       </td>
 
                       <td className="py-4 px-6">
                         {isEditing ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-zinc-400">₹</span>
+                            <span className="text-zinc-400 font-bold">₹</span>
                             <input
                               type="number"
                               value={editActual}
                               onChange={(e) => setEditActual(Number(e.target.value))}
-                              className="w-28 px-2 py-1 rounded-lg border border-zinc-300 text-sm font-semibold"
+                              className="w-28 px-2.5 py-1 rounded-lg border border-zinc-300 text-sm font-bold"
                             />
                           </div>
                         ) : (
@@ -333,7 +373,7 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
                       </td>
 
                       <td className="py-4 px-6">
-                        <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${
+                        <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full ${
                           isOver ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
                         }`}>
                           {isOver ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
@@ -362,7 +402,7 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
                         ) : (
                           <button
                             onClick={() => startEdit(item)}
-                            className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                             <span>Edit Actual</span>
@@ -374,6 +414,18 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* AI Cost Optimizer Callout */}
+        <div className="p-6 rounded-3xl bg-amber-50/70 border border-amber-200/80 flex items-start gap-3.5 text-xs text-amber-900">
+          <Lightbulb className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <span className="font-extrabold uppercase tracking-wider block">AI Budget Optimizer Strategy</span>
+            <p className="leading-relaxed text-amber-800">
+              For <strong>{event.name}</strong> ({event.guest_count} guests), Venue and Catering account for ~62% of allocated funds. 
+              To avoid overruns, negotiate packaged rates for indoor lighting with the banquet hall, and verify with your caterer that live counters (e.g. kulfi/jalebi) include waste buffer policies.
+            </p>
           </div>
         </div>
 

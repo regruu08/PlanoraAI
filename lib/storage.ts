@@ -1,28 +1,43 @@
-'use client';
+"use client";
 
-import { PlanoraEvent, BudgetItem, Task, Vendor, Idea, AIMessage, EventBlueprint } from '@/types';
-import { DEMO_EVENTS, DEMO_BUDGETS, DEMO_TASKS, DEMO_VENDORS, DEMO_IDEAS } from './demo-data';
-import { 
-  saveSupabaseEvent, 
-  saveSupabaseBudgetItem, 
-  saveSupabaseTask, 
-  saveSupabaseVendor, 
-  saveSupabaseIdea, 
-  saveSupabaseAIMessage 
-} from './supabase/db';
+import {
+  AIMessage,
+  BudgetItem,
+  EventBlueprint,
+  Idea,
+  PlanoraEvent,
+  Task,
+  Vendor,
+} from "@/types";
+import {
+  DEMO_BUDGETS,
+  DEMO_EVENTS,
+  DEMO_IDEAS,
+  DEMO_TASKS,
+  DEMO_VENDORS,
+} from "./demo-data";
+import {
+  saveSupabaseAIMessage,
+  saveSupabaseBudgetItem,
+  saveSupabaseEvent,
+  saveSupabaseIdea,
+  saveSupabaseTask,
+  saveSupabaseVendor,
+} from "./supabase/db";
+import { validateBlueprintForEvent } from "./validation/event";
 
 const STORAGE_KEYS = {
-  EVENTS: 'planora_events_v1',
-  BUDGETS: 'planora_budgets_v1',
-  TASKS: 'planora_tasks_v1',
-  VENDORS: 'planora_vendors_v1',
-  IDEAS: 'planora_ideas_v1',
-  MESSAGES: 'planora_ai_messages_v1',
+  EVENTS: "planora_events_v1",
+  BUDGETS: "planora_budgets_v1",
+  TASKS: "planora_tasks_v1",
+  VENDORS: "planora_vendors_v1",
+  IDEAS: "planora_ideas_v1",
+  MESSAGES: "planora_ai_messages_v1",
 };
 
 // Initialize default storage with demo data if empty
 export function initLocalStorage(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
   if (!localStorage.getItem(STORAGE_KEYS.EVENTS)) {
     localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(DEMO_EVENTS));
@@ -42,7 +57,7 @@ export function initLocalStorage(): void {
 }
 
 export function getEvents(): PlanoraEvent[] {
-  if (typeof window === 'undefined') return DEMO_EVENTS;
+  if (typeof window === "undefined") return DEMO_EVENTS;
   initLocalStorage();
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.EVENTS);
@@ -58,28 +73,46 @@ export function getEventById(id: string): PlanoraEvent | undefined {
 }
 
 export function saveEvent(event: PlanoraEvent): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   const events = getEvents();
   const existingIdx = events.findIndex((e) => e.id === event.id);
   if (existingIdx >= 0) {
-    events[existingIdx] = { ...events[existingIdx], ...event, updated_at: new Date().toISOString() };
+    events[existingIdx] = {
+      ...events[existingIdx],
+      ...event,
+      updated_at: new Date().toISOString(),
+    };
   } else {
     events.unshift(event);
   }
   localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
 
   // Async sync to Supabase if configured
-  saveSupabaseEvent(event).catch((err) => console.warn('Supabase sync background notice:', err));
+  saveSupabaseEvent(event).catch((err) =>
+    console.warn("Supabase sync background notice:", err),
+  );
 }
 
 export function deleteEvent(id: string): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   const events = getEvents().filter((e) => e.id !== id);
   localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
+  for (const key of [
+    STORAGE_KEYS.BUDGETS,
+    STORAGE_KEYS.TASKS,
+    STORAGE_KEYS.VENDORS,
+    STORAGE_KEYS.IDEAS,
+    STORAGE_KEYS.MESSAGES,
+  ]) {
+    const raw = localStorage.getItem(key);
+    const map = raw ? JSON.parse(raw) : {};
+    delete map[id];
+    localStorage.setItem(key, JSON.stringify(map));
+  }
 }
 
 export function getBudgets(eventId: string): BudgetItem[] {
-  if (typeof window === 'undefined') return DEMO_BUDGETS[eventId] || [];
+  if (typeof window === "undefined") return DEMO_BUDGETS[eventId] || [];
   initLocalStorage();
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.BUDGETS);
@@ -91,7 +124,7 @@ export function getBudgets(eventId: string): BudgetItem[] {
 }
 
 export function saveBudgetItem(item: BudgetItem): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   initLocalStorage();
   const raw = localStorage.getItem(STORAGE_KEYS.BUDGETS);
   const map = raw ? JSON.parse(raw) : { ...DEMO_BUDGETS };
@@ -110,7 +143,7 @@ export function saveBudgetItem(item: BudgetItem): void {
 }
 
 export function getTasks(eventId: string): Task[] {
-  if (typeof window === 'undefined') return DEMO_TASKS[eventId] || [];
+  if (typeof window === "undefined") return DEMO_TASKS[eventId] || [];
   initLocalStorage();
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.TASKS);
@@ -122,7 +155,7 @@ export function getTasks(eventId: string): Task[] {
 }
 
 export function saveTask(task: Task): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   initLocalStorage();
   const raw = localStorage.getItem(STORAGE_KEYS.TASKS);
   const map = raw ? JSON.parse(raw) : { ...DEMO_TASKS };
@@ -141,7 +174,7 @@ export function saveTask(task: Task): void {
 }
 
 export function getVendors(eventId: string): Vendor[] {
-  if (typeof window === 'undefined') return DEMO_VENDORS[eventId] || [];
+  if (typeof window === "undefined") return DEMO_VENDORS[eventId] || [];
   initLocalStorage();
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.VENDORS);
@@ -153,7 +186,7 @@ export function getVendors(eventId: string): Vendor[] {
 }
 
 export function saveVendor(vendor: Vendor): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   initLocalStorage();
   const raw = localStorage.getItem(STORAGE_KEYS.VENDORS);
   const map = raw ? JSON.parse(raw) : { ...DEMO_VENDORS };
@@ -172,7 +205,7 @@ export function saveVendor(vendor: Vendor): void {
 }
 
 export function getIdeas(eventId: string): Idea[] {
-  if (typeof window === 'undefined') return DEMO_IDEAS[eventId] || [];
+  if (typeof window === "undefined") return DEMO_IDEAS[eventId] || [];
   initLocalStorage();
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.IDEAS);
@@ -184,7 +217,7 @@ export function getIdeas(eventId: string): Idea[] {
 }
 
 export function saveIdea(idea: Idea): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   initLocalStorage();
   const raw = localStorage.getItem(STORAGE_KEYS.IDEAS);
   const map = raw ? JSON.parse(raw) : { ...DEMO_IDEAS };
@@ -203,7 +236,7 @@ export function saveIdea(idea: Idea): void {
 }
 
 export function getAIMessages(eventId: string): AIMessage[] {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.MESSAGES);
     const map = raw ? JSON.parse(raw) : {};
@@ -214,7 +247,7 @@ export function getAIMessages(eventId: string): AIMessage[] {
 }
 
 export function saveAIMessage(msg: AIMessage): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.MESSAGES);
     const map = raw ? JSON.parse(raw) : {};
@@ -228,12 +261,33 @@ export function saveAIMessage(msg: AIMessage): void {
   } catch {}
 }
 
+export function clearAIMessages(eventId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.MESSAGES);
+    const map = raw ? JSON.parse(raw) : {};
+    delete map[eventId];
+    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(map));
+  } catch {}
+}
+
 /**
  * Apply generated blueprint to storage for a given event
  */
-export function applyBlueprintToEvent(eventId: string, blueprint: EventBlueprint): void {
-  if (typeof window === 'undefined') return;
+export function applyBlueprintToEvent(
+  eventId: string,
+  blueprint: EventBlueprint,
+): void {
+  if (typeof window === "undefined") return;
   initLocalStorage();
+
+  const event = getEventById(eventId);
+  if (!event) throw new Error("This event could not be found.");
+  validateBlueprintForEvent(blueprint, event);
+  const previousBudgets = getBudgets(eventId);
+  const previousTasks = getTasks(eventId);
+  const previousVendors = getVendors(eventId);
+  const previousIdeas = getIdeas(eventId);
 
   // Convert budget items
   const newBudgets: BudgetItem[] = blueprint.budgetPlan.map((b, idx) => ({
@@ -255,7 +309,7 @@ export function applyBlueprintToEvent(eventId: string, blueprint: EventBlueprint
     description: t.description,
     due_date: t.dueDate,
     priority: t.priority,
-    status: 'pending',
+    status: "pending",
     created_at: new Date().toISOString(),
   }));
 
@@ -267,7 +321,7 @@ export function applyBlueprintToEvent(eventId: string, blueprint: EventBlueprint
       event_id: eventId,
       vendor_type: v.vendorType,
       estimated_budget: v.estimatedBudget,
-      status: 'needed',
+      status: "needed",
       checklist: v.checklist.map((c, cIdx) => ({
         id: `bp-vc-${Date.now()}-${idx}-${cIdx}`,
         vendor_id: vendorId,
@@ -290,34 +344,63 @@ export function applyBlueprintToEvent(eventId: string, blueprint: EventBlueprint
     created_at: new Date().toISOString(),
   }));
 
+  // Merge by identity and keep user-created records and recorded progress.
+  const merge = <T extends { id: string }>(
+    previous: T[],
+    generated: T[],
+    key: (item: T) => string,
+  ): T[] => {
+    const merged = [...previous];
+    for (const item of generated) {
+      const index = merged.findIndex(
+        (old) => key(old).toLowerCase() === key(item).toLowerCase(),
+      );
+      if (index < 0) merged.push(item);
+      // Existing records are deliberately preserved: user edits and payments take precedence.
+    }
+    return merged;
+  };
+  const budgets = previousBudgets.length ? previousBudgets : newBudgets;
+  const tasks = merge(previousTasks, newTasks, (item) => item.title);
+  const vendors = merge(
+    previousVendors,
+    newVendors,
+    (item) => item.vendor_type,
+  );
+  const ideas = merge(previousIdeas, newIdeas, (item) => item.title);
+
   // Save each into local map
   try {
     const bRaw = localStorage.getItem(STORAGE_KEYS.BUDGETS);
     const bMap = bRaw ? JSON.parse(bRaw) : {};
-    bMap[eventId] = newBudgets;
+    bMap[eventId] = budgets;
     localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(bMap));
 
     const tRaw = localStorage.getItem(STORAGE_KEYS.TASKS);
     const tMap = tRaw ? JSON.parse(tRaw) : {};
-    tMap[eventId] = newTasks;
+    tMap[eventId] = tasks;
     localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tMap));
 
     const vRaw = localStorage.getItem(STORAGE_KEYS.VENDORS);
     const vMap = vRaw ? JSON.parse(vRaw) : {};
-    vMap[eventId] = newVendors;
+    vMap[eventId] = vendors;
     localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(vMap));
 
     const iRaw = localStorage.getItem(STORAGE_KEYS.IDEAS);
     const iMap = iRaw ? JSON.parse(iRaw) : {};
-    iMap[eventId] = newIdeas;
+    iMap[eventId] = ideas;
     localStorage.setItem(STORAGE_KEYS.IDEAS, JSON.stringify(iMap));
 
     // Also trigger Supabase sync in background
-    newBudgets.forEach((b) => saveSupabaseBudgetItem(b).catch(() => {}));
-    newTasks.forEach((t) => saveSupabaseTask(t).catch(() => {}));
-    newVendors.forEach((v) => saveSupabaseVendor(v).catch(() => {}));
-    newIdeas.forEach((i) => saveSupabaseIdea(i).catch(() => {}));
+    budgets.forEach((b) => saveSupabaseBudgetItem(b).catch(() => {}));
+    tasks.forEach((t) => saveSupabaseTask(t).catch(() => {}));
+    vendors.forEach((v) => saveSupabaseVendor(v).catch(() => {}));
+    ideas.forEach((i) => saveSupabaseIdea(i).catch(() => {}));
   } catch (err) {
-    console.error('Error applying blueprint:', err);
+    throw new Error(
+      err instanceof Error
+        ? err.message
+        : "Could not save your plan. Check browser storage and try again.",
+    );
   }
 }

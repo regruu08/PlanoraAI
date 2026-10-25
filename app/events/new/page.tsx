@@ -13,17 +13,9 @@ import {
   Flame, 
   Cake, 
   Building2, 
-  Calendar, 
-  MapPin, 
-  Users, 
-  IndianRupee, 
-  FileText, 
-  Utensils, 
-  Home, 
-  HeartHandshake,
-  CheckCircle2,
+  Wand2,
   RefreshCw,
-  Wand2
+  Gift
 } from 'lucide-react';
 
 export default function NewEventPage() {
@@ -48,7 +40,7 @@ export default function NewEventPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progressStep, setProgressStep] = useState<string>('');
 
-  // Quick Demo Pre-fillers
+  // 1-Click Quick Demo Pre-fillers
   const loadDemo = (type: EventType) => {
     setEventType(type);
     if (type === 'wedding') {
@@ -123,7 +115,7 @@ export default function NewEventPage() {
     }
 
     setIsSubmitting(true);
-    setProgressStep('Creating event structure...');
+    setProgressStep('Synthesizing event context...');
 
     try {
       const eventId = `evt-${Date.now()}`;
@@ -148,7 +140,7 @@ export default function NewEventPage() {
       const resData = await response.json();
 
       if (resData.success && resData.blueprint) {
-        setProgressStep('Synthesizing budgets, timeline, and vendor checklists...');
+        setProgressStep('Finalizing budget, timeline, and vendor checklists...');
         applyBlueprintToEvent(eventId, resData.blueprint);
 
         try {
@@ -176,40 +168,43 @@ export default function NewEventPage() {
 
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Header */}
+        {/* Header & Quick Autofill */}
         <div className="text-center max-w-2xl mx-auto mb-8">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold mb-3">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-bold mb-3">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>AI Planning Wizard</span>
+            <span>AI Event Planning Wizard</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-zinc-900 tracking-tight">
-            Create Your Celebration
+          <h1 className="text-3xl font-extrabold text-zinc-900 tracking-tight sm:text-4xl">
+            Create Your Celebration Plan
           </h1>
           <p className="text-sm text-zinc-500 mt-1">
-            Provide the essentials and Planora AI will construct an itemized budget, reverse timeline, and vendor checklists.
+            Provide the details and Gemini AI will construct an itemized budget, reverse timeline, and vendor checklists.
           </p>
 
           {/* 1-Click Quick Demo Pre-fillers */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-            <span className="text-xs text-zinc-400 font-medium">Quick Demo Autofill:</span>
+          <div className="mt-5 p-3 rounded-2xl bg-white border border-zinc-200/90 shadow-xs inline-flex flex-wrap items-center justify-center gap-2">
+            <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
+              <Gift className="w-3.5 h-3.5 text-amber-500" />
+              1-Click Autofill:
+            </span>
             <button
               type="button"
               onClick={() => loadDemo('wedding')}
-              className="px-3 py-1 text-xs font-semibold rounded-lg bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 transition-colors"
+              className="px-3 py-1 text-xs font-bold rounded-lg bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 transition-colors"
             >
               💍 Wedding (Lucknow, ₹8L)
             </button>
             <button
               type="button"
               onClick={() => loadDemo('birthday')}
-              className="px-3 py-1 text-xs font-semibold rounded-lg bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-colors"
+              className="px-3 py-1 text-xs font-bold rounded-lg bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-colors"
             >
               🎂 Birthday (Space, ₹50k)
             </button>
             <button
               type="button"
               onClick={() => loadDemo('community')}
-              className="px-3 py-1 text-xs font-semibold rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-colors"
+              className="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-colors"
             >
               🎪 Community (Diwali, ₹2L)
             </button>
@@ -220,14 +215,14 @@ export default function NewEventPage() {
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-zinc-200 shadow-sm p-6 sm:p-10 space-y-8">
           
           {errors.form && (
-            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+            <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm">
               {errors.form}
             </div>
           )}
 
           {/* 1. Event Type Selector */}
           <div>
-            <label className="block text-sm font-bold text-zinc-900 mb-3">
+            <label className="block text-sm font-extrabold text-zinc-900 mb-3">
               1. Select Event Type <span className="text-rose-500">*</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -241,7 +236,7 @@ export default function NewEventPage() {
                     : 'border-zinc-200 hover:bg-zinc-50'
                 }`}
               >
-                <div className={`p-2 rounded-xl shrink-0 ${eventType === 'wedding' ? 'bg-rose-500 text-white' : 'bg-zinc-100 text-zinc-600'}`}>
+                <div className={`p-2.5 rounded-xl shrink-0 ${eventType === 'wedding' ? 'bg-rose-500 text-white shadow-xs' : 'bg-zinc-100 text-zinc-600'}`}>
                   <Flame className="w-5 h-5" />
                 </div>
                 <div>
@@ -259,7 +254,7 @@ export default function NewEventPage() {
                     : 'border-zinc-200 hover:bg-zinc-50'
                 }`}
               >
-                <div className={`p-2 rounded-xl shrink-0 ${eventType === 'birthday' ? 'bg-amber-500 text-white' : 'bg-zinc-100 text-zinc-600'}`}>
+                <div className={`p-2.5 rounded-xl shrink-0 ${eventType === 'birthday' ? 'bg-amber-500 text-white shadow-xs' : 'bg-zinc-100 text-zinc-600'}`}>
                   <Cake className="w-5 h-5" />
                 </div>
                 <div>
@@ -277,7 +272,7 @@ export default function NewEventPage() {
                     : 'border-zinc-200 hover:bg-zinc-50'
                 }`}
               >
-                <div className={`p-2 rounded-xl shrink-0 ${eventType === 'community' ? 'bg-emerald-600 text-white' : 'bg-zinc-100 text-zinc-600'}`}>
+                <div className={`p-2.5 rounded-xl shrink-0 ${eventType === 'community' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-zinc-100 text-zinc-600'}`}>
                   <Building2 className="w-5 h-5" />
                 </div>
                 <div>
@@ -291,11 +286,11 @@ export default function NewEventPage() {
 
           {/* 2. Primary Details */}
           <div className="space-y-4">
-            <h2 className="text-sm font-bold text-zinc-900">2. Core Celebration Details</h2>
+            <h2 className="text-sm font-extrabold text-zinc-900">2. Core Celebration Details</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
                   Event Name <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -310,7 +305,7 @@ export default function NewEventPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
                   Event Date <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -324,7 +319,7 @@ export default function NewEventPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
                   Location / City <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -339,7 +334,7 @@ export default function NewEventPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
                   Expected Guests <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -355,11 +350,11 @@ export default function NewEventPage() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
                   Total Budget (₹ INR) <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-zinc-400 font-medium">₹</span>
+                  <span className="absolute left-3.5 top-2.5 text-zinc-400 font-bold">₹</span>
                   <input
                     type="number"
                     min="1000"
@@ -368,7 +363,7 @@ export default function NewEventPage() {
                     placeholder="e.g. 800000"
                     value={totalBudget}
                     onChange={(e) => setTotalBudget(e.target.value)}
-                    className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-semibold"
+                    className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-zinc-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
                   />
                 </div>
                 {errors.total_budget && <p className="text-xs text-red-500 mt-1">{errors.total_budget}</p>}
@@ -376,17 +371,15 @@ export default function NewEventPage() {
             </div>
           </div>
 
-          {/* 3. Optional Context for Hyper-Personalization */}
+          {/* 3. Creative & Cultural Preferences */}
           <div className="space-y-4 pt-4 border-t border-zinc-100">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-zinc-900">
-                3. Creative Context & Preferences <span className="text-xs font-normal text-zinc-400">(Optional)</span>
-              </h2>
-            </div>
+            <h2 className="text-sm font-extrabold text-zinc-900">
+              3. Creative Context &amp; Preferences <span className="text-xs font-normal text-zinc-400">(Optional)</span>
+            </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Theme / Style</label>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Theme / Style</label>
                 <input
                   type="text"
                   placeholder="e.g. Traditional Awadhi + Modern Elegance"
@@ -397,7 +390,7 @@ export default function NewEventPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Food Preference</label>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Food Preference</label>
                 <input
                   type="text"
                   placeholder="e.g. Vegetarian Awadhi Spread, Live Kulfi"
@@ -408,7 +401,7 @@ export default function NewEventPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Venue Type</label>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Venue Type</label>
                 <select
                   value={venueType}
                   onChange={(e) => setVenueType(e.target.value as 'indoor' | 'outdoor' | 'hybrid')}
@@ -421,7 +414,7 @@ export default function NewEventPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Cultural Preferences</label>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Cultural Preferences</label>
                 <input
                   type="text"
                   placeholder="e.g. North Indian Hindu, Lucknowi Tehzeeb"
@@ -432,7 +425,7 @@ export default function NewEventPage() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Special Requirements</label>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Special Requirements</label>
                 <input
                   type="text"
                   placeholder="e.g. Eco-friendly varmala, elderly seating, drone permitted"
@@ -443,7 +436,7 @@ export default function NewEventPage() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Additional Notes</label>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Additional Notes</label>
                 <textarea
                   rows={2}
                   placeholder="Any other specific requests or ideas..."
@@ -460,7 +453,7 @@ export default function NewEventPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-4 px-6 rounded-2xl text-base font-bold text-white bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-700 hover:to-amber-600 shadow-lg shadow-rose-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-4 px-6 rounded-2xl text-base font-bold text-white bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-700 hover:to-amber-600 shadow-lg shadow-rose-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2 hover:scale-101"
             >
               {isSubmitting ? (
                 <>
@@ -474,8 +467,8 @@ export default function NewEventPage() {
                 </>
               )}
             </button>
-            <p className="text-center text-xs text-zinc-400 mt-2">
-              Gemini will generate your itemized budget, reverse timeline, vendor checklist, and personalized ideas.
+            <p className="text-center text-xs text-zinc-400 mt-2 font-medium">
+              Gemini will synthesize an itemized budget, reverse timeline, vendor checklist, and personalized ideas.
             </p>
           </div>
 

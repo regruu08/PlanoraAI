@@ -1,5 +1,13 @@
-import { supabase, isSupabaseConfigured } from './client';
-import { PlanoraEvent, BudgetItem, Task, Vendor, VendorChecklistItem, Idea, AIMessage, EventBlueprint } from '@/types';
+import {
+  AIMessage,
+  BudgetItem,
+  Idea,
+  PlanoraEvent,
+  Task,
+  Vendor,
+  VendorChecklistItem,
+} from "@/types";
+import { isSupabaseConfigured, supabase } from "./client";
 
 /**
  * Supabase Data Access Layer
@@ -10,13 +18,13 @@ export async function fetchSupabaseEvents(): Promise<PlanoraEvent[] | null> {
   if (!isSupabaseConfigured || !supabase) return null;
   try {
     const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from("events")
+      .select("*")
+      .order("created_at", { ascending: false });
     if (error) throw error;
     return data as PlanoraEvent[];
   } catch (err) {
-    console.warn('Error fetching events from Supabase:', err);
+    console.warn("Error fetching events from Supabase:", err);
     return null;
   }
 }
@@ -24,7 +32,7 @@ export async function fetchSupabaseEvents(): Promise<PlanoraEvent[] | null> {
 export async function saveSupabaseEvent(event: PlanoraEvent): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return false;
   try {
-    const { error } = await supabase.from('events').upsert({
+    const { error } = await supabase.from("events").upsert({
       id: event.id,
       name: event.name,
       event_type: event.event_type,
@@ -43,29 +51,33 @@ export async function saveSupabaseEvent(event: PlanoraEvent): Promise<boolean> {
     if (error) throw error;
     return true;
   } catch (err) {
-    console.warn('Error saving event to Supabase:', err);
+    console.warn("Error saving event to Supabase:", err);
     return false;
   }
 }
 
-export async function fetchSupabaseBudgets(eventId: string): Promise<BudgetItem[] | null> {
+export async function fetchSupabaseBudgets(
+  eventId: string,
+): Promise<BudgetItem[] | null> {
   if (!isSupabaseConfigured || !supabase) return null;
   try {
     const { data, error } = await supabase
-      .from('budget_items')
-      .select('*')
-      .eq('event_id', eventId);
+      .from("budget_items")
+      .select("*")
+      .eq("event_id", eventId);
     if (error) throw error;
     return data as BudgetItem[];
-  } catch (err) {
+  } catch {
     return null;
   }
 }
 
-export async function saveSupabaseBudgetItem(item: BudgetItem): Promise<boolean> {
+export async function saveSupabaseBudgetItem(
+  item: BudgetItem,
+): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return false;
   try {
-    const { error } = await supabase.from('budget_items').upsert({
+    const { error } = await supabase.from("budget_items").upsert({
       id: item.id,
       event_id: item.event_id,
       category: item.category,
@@ -82,14 +94,16 @@ export async function saveSupabaseBudgetItem(item: BudgetItem): Promise<boolean>
   }
 }
 
-export async function fetchSupabaseTasks(eventId: string): Promise<Task[] | null> {
+export async function fetchSupabaseTasks(
+  eventId: string,
+): Promise<Task[] | null> {
   if (!isSupabaseConfigured || !supabase) return null;
   try {
     const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('event_id', eventId)
-      .order('due_date', { ascending: true });
+      .from("tasks")
+      .select("*")
+      .eq("event_id", eventId)
+      .order("due_date", { ascending: true });
     if (error) throw error;
     return data as Task[];
   } catch {
@@ -100,7 +114,7 @@ export async function fetchSupabaseTasks(eventId: string): Promise<Task[] | null
 export async function saveSupabaseTask(task: Task): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return false;
   try {
-    const { error } = await supabase.from('tasks').upsert({
+    const { error } = await supabase.from("tasks").upsert({
       id: task.id,
       event_id: task.event_id,
       title: task.title,
@@ -116,21 +130,23 @@ export async function saveSupabaseTask(task: Task): Promise<boolean> {
   }
 }
 
-export async function fetchSupabaseVendors(eventId: string): Promise<Vendor[] | null> {
+export async function fetchSupabaseVendors(
+  eventId: string,
+): Promise<Vendor[] | null> {
   if (!isSupabaseConfigured || !supabase) return null;
   try {
     const { data: vendorsData, error: vErr } = await supabase
-      .from('vendors')
-      .select('*')
-      .eq('event_id', eventId);
+      .from("vendors")
+      .select("*")
+      .eq("event_id", eventId);
     if (vErr || !vendorsData) return null;
 
     // Fetch checklists for all vendors
     const vendorIds = vendorsData.map((v) => v.id);
     const { data: checkData } = await supabase
-      .from('vendor_checklist_items')
-      .select('*')
-      .in('vendor_id', vendorIds);
+      .from("vendor_checklist_items")
+      .select("*")
+      .in("vendor_id", vendorIds);
 
     const checklistMap: Record<string, VendorChecklistItem[]> = {};
     (checkData || []).forEach((c) => {
@@ -150,7 +166,7 @@ export async function fetchSupabaseVendors(eventId: string): Promise<Vendor[] | 
 export async function saveSupabaseVendor(vendor: Vendor): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return false;
   try {
-    const { error: vErr } = await supabase.from('vendors').upsert({
+    const { error: vErr } = await supabase.from("vendors").upsert({
       id: vendor.id,
       event_id: vendor.event_id,
       vendor_type: vendor.vendor_type,
@@ -166,7 +182,7 @@ export async function saveSupabaseVendor(vendor: Vendor): Promise<boolean> {
     // Upsert checklist items
     if (vendor.checklist && vendor.checklist.length > 0) {
       for (const item of vendor.checklist) {
-        await supabase.from('vendor_checklist_items').upsert({
+        await supabase.from("vendor_checklist_items").upsert({
           id: item.id,
           vendor_id: vendor.id,
           label: item.label,
@@ -181,13 +197,15 @@ export async function saveSupabaseVendor(vendor: Vendor): Promise<boolean> {
   }
 }
 
-export async function fetchSupabaseIdeas(eventId: string): Promise<Idea[] | null> {
+export async function fetchSupabaseIdeas(
+  eventId: string,
+): Promise<Idea[] | null> {
   if (!isSupabaseConfigured || !supabase) return null;
   try {
     const { data, error } = await supabase
-      .from('ideas')
-      .select('*')
-      .eq('event_id', eventId);
+      .from("ideas")
+      .select("*")
+      .eq("event_id", eventId);
     if (error) return null;
     return data as Idea[];
   } catch {
@@ -198,7 +216,7 @@ export async function fetchSupabaseIdeas(eventId: string): Promise<Idea[] | null
 export async function saveSupabaseIdea(idea: Idea): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return false;
   try {
-    const { error } = await supabase.from('ideas').upsert({
+    const { error } = await supabase.from("ideas").upsert({
       id: idea.id,
       event_id: idea.event_id,
       category: idea.category,
@@ -216,7 +234,7 @@ export async function saveSupabaseIdea(idea: Idea): Promise<boolean> {
 export async function saveSupabaseAIMessage(msg: AIMessage): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return false;
   try {
-    const { error } = await supabase.from('ai_messages').insert({
+    const { error } = await supabase.from("ai_messages").insert({
       id: msg.id,
       event_id: msg.event_id,
       role: msg.role,
