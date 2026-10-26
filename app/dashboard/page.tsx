@@ -78,13 +78,13 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-50/50">
+    <div className="min-h-screen flex flex-col bg-[#FAF8F5]">
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-zinc-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-[#E4E1DC]">
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">

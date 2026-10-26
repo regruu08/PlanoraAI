@@ -54,6 +54,7 @@ export default function CopilotPage({ params }: { params: Promise<{ id: string }
   const [input, setInput] = useState('');
   const [error, setError] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [aiMode, setAiMode] = useState<'live' | 'offline'>('live');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -110,8 +111,9 @@ Main aapke live budget, timeline milestones, aur vendor checklists se 100% synch
   };
 
   const handleSendMessage = async (textToSend?: string) => {
+    if (isSending) return;
     const msgText = (textToSend || input).trim();
-    if (!msgText || isSending || !event) return;
+    if (!msgText || !event) return;
 
     const userMsg: AIMessage = {
       id: `msg-u-${Date.now()}`,
@@ -149,6 +151,10 @@ Main aapke live budget, timeline milestones, aur vendor checklists se 100% synch
         throw new Error(data.error || 'Your message could not be sent.');
       }
 
+      if (data.mode) {
+        setAiMode(data.mode);
+      }
+
       const replyContent = data.reply || 'Planora AI could not generate a response. Please retry.';
 
       const botMsg: AIMessage = {
@@ -169,34 +175,54 @@ Main aapke live budget, timeline milestones, aur vendor checklists se 100% synch
     }
   };
 
-  // Quick suggestion prompts tailored for Hack2Skill Challenge 5
-  const quickPrompts = [
-    {
-      category: 'Urgent',
-      text: 'Mere event me abhi sabse urgent kya hai?',
-      icon: Clock,
-    },
-    {
-      category: 'Vendors',
-      text: 'Photographer book karne se pehle kya poochu?',
-      icon: Store,
-    },
-    {
-      category: 'Budget',
-      text: 'Decoration budget reduce kaise karun bina quality kharab kiye?',
-      icon: Wallet,
-    },
-    {
-      category: 'Food',
-      text: 'Catering tasting aur menu finalizing me kya verify karein?',
-      icon: Sparkles,
-    },
-    {
-      category: 'Risk',
-      text: 'Budget me kaha overspending ka sabse bada risk hai?',
-      icon: ShieldCheck,
-    },
-  ];
+  // Dynamic context-aware starter prompts for non-technical users
+  const quickPrompts = useMemo(() => {
+    const loc = event?.location || 'my city';
+    const isWedding = event?.event_type === 'wedding';
+    const isBirthday = event?.event_type === 'birthday';
+
+    return [
+      {
+        category: 'Urgent',
+        text: 'Mere event me abhi sabse urgent kya hai?',
+        icon: Clock,
+      },
+      {
+        category: 'Budget',
+        text: 'Reduce my budget by 15% without losing quality',
+        icon: Wallet,
+      },
+      {
+        category: 'Catering',
+        text: 'What 5 questions must I ask the caterer before paying an advance?',
+        icon: Sparkles,
+      },
+      {
+        category: 'Itinerary',
+        text: isWedding
+          ? 'Create a 3-day wedding guest itinerary'
+          : isBirthday
+            ? 'Create a 4-hour birthday party schedule for kids & parents'
+            : 'Create an event day schedule with volunteer roles',
+        icon: Clock,
+      },
+      {
+        category: 'Location',
+        text: `Check if my budget allocation is realistic for ${loc}`,
+        icon: ShieldCheck,
+      },
+      {
+        category: 'Vendors',
+        text: 'Photographer book karne se pehle kya poochu?',
+        icon: Store,
+      },
+      {
+        category: 'Risk',
+        text: 'Budget me kaha overspending ka sabse bada risk hai?',
+        icon: ShieldCheck,
+      },
+    ];
+  }, [event]);
 
   // Grounding metrics computed live for display in copilot inspector
   const totalAllocated = useMemo(() => budgets.reduce((acc, b) => acc + (b.allocated_amount || 0), 0), [budgets]);
@@ -256,10 +282,17 @@ Main aapke live budget, timeline milestones, aur vendor checklists se 100% synch
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-extrabold text-sm text-zinc-900">Planora AI Copilot</h3>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Live Grounded
-                    </span>
+                    {aiMode === 'live' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Live AI
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        Offline Smart Mode — Check API Key
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-zinc-500">
                     Trained celebration strategist &bull; English &amp; Hinglish fluent
@@ -319,6 +352,11 @@ Main aapke live budget, timeline milestones, aur vendor checklists se 100% synch
                         const isBullet = line.trim().startsWith('- ') || line.trim().startsWith('* ');
                         const isNumber = /^\d+\.\s/.test(line.trim());
                         
+                        // Detect follow-up question suggestion (e.g. 👉 **Next Question to Ask**: "...")
+                        const isFollowUp = !isUser && (line.includes('Next Question to Ask') || line.includes('Next Step'));
+                        const followUpMatch = isFollowUp ? line.match(/"([^"]+)"/) : null;
+                        const followUpQuery = followUpMatch ? followUpMatch[1] : null;
+
                         // Parse bold markdown
                         const formattedParts = line.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
                           if (part.startsWith('**') && part.endsWith('**')) {
@@ -333,6 +371,15 @@ Main aapke live budget, timeline milestones, aur vendor checklists se 100% synch
                             className={`${isBullet ? 'pl-3 relative before:content-["•"] before:absolute before:left-0 before:text-rose-500' : ''} ${isNumber ? 'pl-2' : ''} ${idx > 0 ? 'mt-1.5' : ''}`}
                           >
                             {formattedParts}
+                            {followUpQuery && !isSending && (
+                              <button
+                                type="button"
+                                onClick={() => handleSendMessage(followUpQuery)}
+                                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-white border border-rose-200 hover:border-rose-400 hover:bg-rose-50 text-rose-700 rounded-full transition-colors cursor-pointer shadow-2xs"
+                              >
+                                <span>💬 Click to ask: &ldquo;{followUpQuery}&rdquo;</span>
+                              </button>
+                            )}
                           </div>
                         );
                       })}

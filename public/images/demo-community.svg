@@ -1,0 +1,20 @@
+<svg width="600" height="750" viewBox="0 0 600 750" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="comm_bg" x1="0" y1="0" x2="600" y2="750" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ECFDF5"/>
+      <stop offset="100%" stop-color="#FEF3C7"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="750" fill="url(#comm_bg)"/>
+  <!-- Traditional Shamiana Canopy & Fairy Lanterns -->
+  <path d="M 100 240 Q 300 160 500 240 L 450 420 Q 300 480 150 420 Z" fill="#D1FAE5" opacity="0.6"/>
+  <path d="M 120 250 Q 300 180 480 250" stroke="#059669" stroke-width="2" stroke-dasharray="4 4" opacity="0.5"/>
+  <!-- Diya Festival Light Core -->
+  <g transform="translate(300, 340)">
+    <path d="M -35 15 Q 0 40 35 15 Q 0 5 -35 15 Z" fill="#D97706"/>
+    <path d="M 0 -10 Q 10 5 0 15 Q -10 5 0 -10 Z" fill="#DC2626"/>
+    <circle cx="0" cy="5" r="30" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.7"/>
+  </g>
+  <text x="300" y="470" font-family="Georgia, serif" font-size="22" font-weight="bold" fill="#064E3B" text-anchor="middle">Diwali Community Mela &amp; Fair</text>
+  <text x="300" y="505" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#059669" text-anchor="middle" letter-spacing="0.08em">LUCKNOW &bull; 700 GUESTS &bull; ₹2,00,000</text>
+</svg>

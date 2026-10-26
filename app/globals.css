@@ -1,16 +1,172 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #faf8f5;
+  --surface: #ffffff;
   --foreground: #18181b;
+  --color-rose: #e11d48;
+  --color-amber: #d97706;
+  --color-border: #e4e1dc;
+  --font-display: Georgia, Cambria, 'Times New Roman', serif;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --brand-gradient: linear-gradient(135deg, #e11d48 0%, #ea580c 100%);
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Editorial Display Font Utility */
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Route enter animation (App Router) */
+@keyframes routeEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.route-enter {
+  animation: routeEnter 200ms var(--ease-standard) forwards;
+}
+
+/* Accessible Skip Link */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.625rem 1.25rem;
+  background-color: #18181b;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  transition: transform 0.15s var(--ease-standard), opacity 0.15s ease-out;
+  opacity: 0;
+  pointer-events: none;
+}
+.skip-link:focus {
+  top: 1rem;
+  opacity: 1;
+  pointer-events: auto;
+  outline: 2px solid var(--color-rose);
+  outline-offset: 2px;
+}
+
+/* Hide Next.js dev overlay indicator ("N" button) */
+[data-nextjs-dev-tools-button],
+nextjs-portal,
+#nextjs-dev-tools-button {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Content Visibility for Below-the-Fold Performance */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 700px;
+}
+
+.footer-content-visibility {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 500px;
+}
+
+/* Hover Shadow Pseudo-Element Pattern (Fade opacity, never animate box-shadow) */
+.hover-shadow-fade {
+  position: relative;
+}
+.hover-shadow-fade::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.12);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms var(--ease-standard);
+}
+@media (hover: hover) and (pointer: fine) {
+  .hover-shadow-fade:hover::after {
+    opacity: 1;
+  }
+}
+
+/* Pointer effects: only apply hover transforms on fine pointer devices */
+@media (hover: hover) and (pointer: fine) {
+  .hover-lift {
+    transition: transform 200ms var(--ease-standard);
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Motion-Lite Mode for Low-Powered Devices & prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  html:not(.motion-override) * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+    transform: none !important;
+  }
+}
+
+html.motion-lite * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-delay: 0ms !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html.motion-lite .motion-reveal {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+html.motion-lite .route-enter {
+  animation: none !important;
+}
+
+/* When saveData is active, hide heavy photographic hero image and use warm gradient fallback */
+html.data-save-mode .hero-photo-layer {
+  display: none !important;
+}
+
+/* Hardware-accelerated shimmer animation for skeleton wait state */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.8s infinite var(--ease-standard);
 }
 
 /* Custom Scrollbar */
@@ -22,11 +178,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #e4e4e7;
+  background: #e4e1dc;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #d4d4d8;
+  background: #d4d0c9;
 }
 
 /* Print Styles for PDF Export */

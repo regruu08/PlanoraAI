@@ -27,11 +27,13 @@ function load(relative) {
     },
   }).outputText;
   const localRequire = (name) =>
-    name.startsWith("@/")
-      ? load(`${name.slice(2)}.ts`)
-      : name.startsWith(".")
-        ? load(`${path.resolve(path.dirname(filename), name)}.ts`)
-        : require(name);
+    name === "server-only"
+      ? {}
+      : name.startsWith("@/")
+        ? load(`${name.slice(2)}.ts`)
+        : name.startsWith(".")
+          ? load(`${path.resolve(path.dirname(filename), name)}.ts`)
+          : require(name);
   vm.runInThisContext(`(function(require,module,exports){${code}\n})`, {
     filename,
   })(localRequire, sandboxModule, sandboxModule.exports);

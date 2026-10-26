@@ -53,6 +53,7 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
   };
 
   const handleRegeneratePlan = async () => {
+    if (isGenerating) return;
     if (!confirm('Regenerate AI plan? Gemini will recalculate budget allocations, reverse timelines, and ideas based on current event context.')) return;
     setIsGenerating(true);
     try {

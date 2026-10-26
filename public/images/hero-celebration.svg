@@ -1,0 +1,38 @@
+<svg width="600" height="800" viewBox="0 0 600 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hero_bg" x1="300" y1="0" x2="300" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF1F2"/>
+      <stop offset="50%" stop-color="#FFE4E6"/>
+      <stop offset="100%" stop-color="#FEF3C7"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="300" cy="380" r="280" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" stop-opacity="0.8"/>
+      <stop offset="60%" stop-color="#F43F5E" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#FFE4E6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- Background with warm ambient celebration glow -->
+  <rect width="600" height="800" fill="url(#hero_bg)"/>
+  <circle cx="300" cy="380" r="280" fill="url(#sun)"/>
+  
+  <!-- Architectural Celebration Arch Pattern -->
+  <path d="M 120 800 L 120 320 C 120 180 480 180 480 320 L 480 800" stroke="#E11D48" stroke-width="2" stroke-dasharray="6 6" opacity="0.35"/>
+  <path d="M 160 800 L 160 340 C 160 220 440 220 440 340 L 440 800" stroke="#D97706" stroke-width="1.5" opacity="0.4"/>
+  
+  <!-- Festive Marigold Garland Drape -->
+  <path d="M 100 240 Q 300 360 500 240" stroke="#D97706" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+  <path d="M 140 320 Q 300 420 460 320" stroke="#F43F5E" stroke-width="6" stroke-linecap="round" opacity="0.45"/>
+  
+  <!-- Center Auspicious Silhouette Motif -->
+  <g transform="translate(300, 480)" text-anchor="middle">
+    <!-- Diya & Sparkle Core -->
+    <path d="M -40 20 Q 0 50 40 20 Q 0 10 -40 20 Z" fill="#D97706" opacity="0.7"/>
+    <path d="M 0 -15 Q 12 5 0 20 Q -12 5 0 -15 Z" fill="#E11D48" opacity="0.8"/>
+    <!-- Radiating Warm Glow -->
+    <circle cx="0" cy="5" r="45" stroke="#FBBF24" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"/>
+  </g>
+  
+  <!-- Editorial Typography Tag -->
+  <text x="300" y="660" font-family="Georgia, serif" font-size="20" font-weight="bold" fill="#881337" text-anchor="middle" letter-spacing="0.05em">Auspicious Moments &bull; Timeless Craft</text>
+  <text x="300" y="690" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#9F1239" text-anchor="middle" opacity="0.75" letter-spacing="0.1em">PLANORA CELEBRATION TECH</text>
+</svg>

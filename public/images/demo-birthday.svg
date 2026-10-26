@@ -1,0 +1,20 @@
+<svg width="600" height="750" viewBox="0 0 600 750" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bday_bg" x1="0" y1="0" x2="600" y2="750" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FEF3C7"/>
+      <stop offset="100%" stop-color="#EFF6FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="750" fill="url(#bday_bg)"/>
+  <!-- Space Constellation and Birthday Stars -->
+  <circle cx="300" cy="280" r="140" fill="#DBEAFE" opacity="0.6"/>
+  <!-- Satellite & Planetary Orbit Ring -->
+  <ellipse cx="300" cy="280" rx="190" ry="60" stroke="#2563EB" stroke-width="2" stroke-dasharray="6 6" transform="rotate(-20 300 280)" opacity="0.4"/>
+  <!-- Telescope & Star Core -->
+  <circle cx="300" cy="280" r="40" fill="#F59E0B" opacity="0.4"/>
+  <circle cx="210" cy="220" r="8" fill="#F59E0B"/>
+  <circle cx="390" cy="340" r="10" fill="#2563EB"/>
+  <circle cx="360" cy="190" r="6" fill="#F59E0B"/>
+  <text x="300" y="470" font-family="Georgia, serif" font-size="22" font-weight="bold" fill="#1E3A8A" text-anchor="middle">Outer Space Galaxy Explorer</text>
+  <text x="300" y="505" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#2563EB" text-anchor="middle" letter-spacing="0.08em">BANGALORE &bull; 50 GUESTS &bull; ₹50,000</text>
+</svg>

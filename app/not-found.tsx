@@ -6,7 +6,7 @@ import { Sparkles, ArrowRight, Home } from 'lucide-react';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-50/50">
+    <div className="min-h-screen flex flex-col bg-[#FAF8F5]">
       <Navbar />
       <main className="flex-1 max-w-3xl mx-auto px-4 py-24 text-center flex flex-col items-center justify-center">
         <div className="w-16 h-16 rounded-3xl bg-rose-50 text-rose-600 flex items-center justify-center mb-6 shadow-xs border border-rose-100">
@@ -15,7 +15,7 @@ export default function NotFound() {
         <span className="text-xs font-bold uppercase tracking-widest text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-100 mb-3">
           404 &bull; Page Not Found
         </span>
-        <h1 className="text-3xl sm:text-4xl font-black text-zinc-900 tracking-tight">
+        <h1 className="text-3xl sm:text-4xl font-black text-zinc-900 tracking-tight font-display">
           This celebration page could not be found
         </h1>
         <p className="text-sm text-zinc-600 max-w-md mt-3 leading-relaxed">
@@ -24,18 +24,18 @@ export default function NotFound() {
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-rose-600 text-white text-xs font-bold shadow-md hover:bg-rose-700 transition-colors"
+            href="/events/new"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-amber-600 text-white text-xs font-bold shadow-md hover:opacity-95 transition-opacity"
           >
-            <span>Go to Event Dashboard</span>
+            <span>Plan My Event</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white border border-zinc-200 text-zinc-700 text-xs font-bold shadow-2xs hover:bg-zinc-50 transition-colors"
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white border border-[#E4E1DC] text-zinc-700 text-xs font-bold shadow-2xs hover:bg-[#FAF8F5] transition-colors"
           >
             <Home className="w-4 h-4 text-zinc-400" />
-            <span>Home</span>
+            <span>Dashboard</span>
           </Link>
         </div>
       </main>
