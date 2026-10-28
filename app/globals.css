@@ -86,11 +86,6 @@ nextjs-portal,
   contain-intrinsic-size: 1px 700px;
 }
 
-.footer-content-visibility {
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 500px;
-}
-
 /* Hover Shadow Pseudo-Element Pattern (Fade opacity, never animate box-shadow) */
 .hover-shadow-fade {
   position: relative;
@@ -200,4 +195,266 @@ html.data-save-mode .hero-photo-layer {
   .print\:shadow-none {
     box-shadow: none !important;
   }
+}
+
+/* ============================================================ */
+/* Luxury Celebration Dark Theme                                */
+/* ============================================================ */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #100c0a !important;
+  color: #f4f4f5 !important;
+}
+
+/* Page & Section Backgrounds */
+html.dark [class*="bg-[#FAF8F5]"],
+html.dark .bg-\[\#FAF8F5\] {
+  background-color: #100c0a !important;
+}
+
+/* Top Sticky / Solid Navbar in Dark Mode */
+html.dark header [class*="bg-[#FAF8F5]"],
+html.dark header .bg-\[\#FAF8F5\]\/90 {
+  background-color: rgba(18, 14, 12, 0.94) !important;
+  border-bottom: 1px solid #281f1b !important;
+}
+
+html.dark header a,
+html.dark header button,
+html.dark header span {
+  color: #f4f4f5;
+}
+
+html.dark header a.text-zinc-600,
+html.dark header button.text-zinc-600,
+html.dark header a.text-zinc-700 {
+  color: #c4beb5 !important;
+}
+
+html.dark header a.text-zinc-600:hover,
+html.dark header button.text-zinc-600:hover {
+  color: #ffffff !important;
+}
+
+html.dark header [role="menu"] {
+  background-color: #1a1412 !important;
+  border-color: #2e2420 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+html.dark header [role="menuitem"]:hover {
+  background-color: #261d19 !important;
+}
+
+html.dark [id="mobile-nav-drawer"] {
+  background-color: #16100e !important;
+  border-color: #2e2420 !important;
+}
+
+/* Card & Surface Panels */
+html.dark [class*="bg-white"],
+html.dark .bg-white {
+  background-color: #1a1412 !important;
+  border-color: #2b211d !important;
+}
+
+/* Preserve solid white CTA pills on vibrant brand gradients (Footer CTA & Landing Hero) */
+.footer-cta-pill,
+html.dark .footer-cta-pill,
+html.dark [class*="from-rose-600"] a[class*="bg-white"],
+html.dark [class*="from-rose-600"] button[class*="bg-white"],
+html.dark [class*="from-rose-600"] .footer-cta-pill,
+html.dark a.bg-white[class*="text-zinc-950"],
+html.dark button.bg-white[class*="text-zinc-950"],
+html.dark a[class*="text-zinc-950"][class*="bg-white"],
+html.dark button[class*="text-zinc-950"][class*="bg-white"] {
+  background-color: #ffffff !important;
+  color: #09090b !important;
+  border-color: transparent !important;
+}
+
+.footer-cta-pill *,
+html.dark .footer-cta-pill *,
+html.dark [class*="from-rose-600"] a[class*="bg-white"] *,
+html.dark [class*="from-rose-600"] button[class*="bg-white"] *,
+html.dark a.bg-white[class*="text-zinc-950"] *,
+html.dark button.bg-white[class*="text-zinc-950"] * {
+  color: #09090b !important;
+}
+
+.footer-cta-pill:hover,
+html.dark .footer-cta-pill:hover,
+html.dark [class*="from-rose-600"] a[class*="bg-white"]:hover,
+html.dark a.bg-white[class*="text-zinc-950"]:hover {
+  background-color: #f4f4f5 !important;
+  color: #09090b !important;
+}
+
+/* Inner Recessed Containers (Budget Boxes, Task Counters, Meta Containers) */
+html.dark [class*="bg-zinc-50"],
+html.dark .bg-zinc-50 {
+  background-color: #130f0d !important;
+  border-color: #241c18 !important;
+}
+
+html.dark [class*="bg-zinc-100"],
+html.dark .bg-zinc-100 {
+  background-color: #201815 !important;
+  border-color: #2a201b !important;
+}
+
+html.dark [class*="bg-zinc-200"],
+html.dark .bg-zinc-200 {
+  background-color: #2d231e !important;
+}
+
+/* Priority Directive Banner (Deep dark amber-rose glowing gradient) */
+html.dark [class*="from-amber-50"][class*="via-rose-50"],
+html.dark .bg-gradient-to-r.from-amber-50 {
+  background: linear-gradient(to right, rgba(42, 27, 16, 0.95), rgba(43, 20, 20, 0.9), rgba(42, 24, 15, 0.95)) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 4px 20px -2px rgba(245, 158, 11, 0.08) !important;
+}
+
+html.dark [class*="from-amber-50"] .text-amber-900,
+html.dark .text-amber-900 {
+  color: #fbbf24 !important;
+}
+
+html.dark [class*="from-amber-50"] p,
+html.dark [class*="from-amber-50"] .text-zinc-800 {
+  color: #fef3c7 !important;
+}
+
+html.dark [class*="from-amber-50"] a {
+  background-color: #1c1410 !important;
+  color: #fde68a !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+html.dark [class*="from-amber-50"] a:hover {
+  background-color: #291d17 !important;
+  color: #ffffff !important;
+}
+
+/* Card Action Buttons (Open Workspace) */
+html.dark a.bg-zinc-900,
+html.dark button.bg-zinc-900 {
+  background: linear-gradient(to right, #e11d48, #d97706) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px -1px rgba(225, 29, 72, 0.3) !important;
+  border: none !important;
+}
+
+html.dark a.bg-zinc-900:hover,
+html.dark button.bg-zinc-900:hover {
+  opacity: 0.92 !important;
+  transform: translateY(-1px);
+}
+
+/* Category Badges & Pills */
+html.dark [class*="bg-rose-50"] {
+  background-color: rgba(225, 29, 72, 0.16) !important;
+  color: #fda4af !important;
+  border-color: rgba(225, 29, 72, 0.32) !important;
+}
+
+html.dark [class*="bg-amber-50"] {
+  background-color: rgba(217, 119, 6, 0.16) !important;
+  color: #fcd34d !important;
+  border-color: rgba(217, 119, 6, 0.32) !important;
+}
+
+html.dark [class*="bg-emerald-50"] {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+  color: #6ee7b7 !important;
+  border-color: rgba(16, 185, 129, 0.32) !important;
+}
+
+/* Filter Buttons on Dashboard */
+html.dark button.border-zinc-200.bg-white {
+  background-color: #1a1412 !important;
+  border-color: #2d231e !important;
+  color: #c4beb5 !important;
+}
+
+html.dark button.border-zinc-200.bg-white:hover {
+  background-color: #261d19 !important;
+  color: #ffffff !important;
+}
+
+/* High-Contrast Typography */
+html.dark .text-zinc-900 {
+  color: #fcfbf9 !important;
+}
+
+html.dark .text-zinc-800 {
+  color: #f4f4f5 !important;
+}
+
+html.dark .text-zinc-700 {
+  color: #e4dfd7 !important;
+}
+
+html.dark .text-zinc-600 {
+  color: #c4beb5 !important;
+}
+
+html.dark .text-zinc-500 {
+  color: #9c9489 !important;
+}
+
+html.dark .text-zinc-400 {
+  color: #837b71 !important;
+}
+
+html.dark .text-zinc-300 {
+  color: #5f574e !important;
+}
+
+/* Borders */
+html.dark [class*="border-[#E4E1DC]"],
+html.dark [class*="border-zinc-100"],
+html.dark [class*="border-zinc-200"] {
+  border-color: #2b211d !important;
+}
+
+/* Form Controls & Inputs */
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #140f0d !important;
+  color: #fcfbf9 !important;
+  border-color: #382d27 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #837b71 !important;
+}
+
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+  border-color: #e11d48 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.25) !important;
+}
+
+/* Scrollbars */
+html.dark ::-webkit-scrollbar-thumb {
+  background: #3b2e29;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #4d3c35;
+}
+
+/* Footer in Dark Mode */
+html.dark footer [class*="bg-white"] {
+  background-color: #100c0a !important;
+  border-color: #281f1b !important;
 }

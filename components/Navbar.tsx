@@ -14,6 +14,8 @@ import {
   LayoutDashboard
 } from 'lucide-react';
 
+import ThemeToggle from '@/components/ThemeToggle';
+
 export default function Navbar() {
   const pathname = usePathname();
   const isLanding = pathname === '/';
@@ -312,6 +314,9 @@ export default function Navbar() {
               </div>
             </div>
 
+            {/* Theme Toggle Button */}
+            <ThemeToggle />
+
             {/* CTA Pill: Solid white pill on overlay; Brand-gradient on solid */}
             <Link
               href="/events/new"
@@ -328,6 +333,7 @@ export default function Navbar() {
 
           {/* Mobile Menu Button with morphing hamburger icon (< 1024px) */}
           <div className="flex lg:hidden items-center gap-2">
+            <ThemeToggle />
             <button
               ref={drawerTriggerRef}
               onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}

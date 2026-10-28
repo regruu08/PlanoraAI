@@ -35,24 +35,33 @@ const STORAGE_KEYS = {
   MESSAGES: "planora_ai_messages_v1",
 };
 
+function safeSetItem(key: string, value: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, value);
+  } catch (err) {
+    console.warn(`[storage] Could not save to localStorage (${key}):`, err);
+  }
+}
+
 // Initialize default storage with demo data if empty
 export function initLocalStorage(): void {
   if (typeof window === "undefined") return;
 
   if (!localStorage.getItem(STORAGE_KEYS.EVENTS)) {
-    localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(DEMO_EVENTS));
+    safeSetItem(STORAGE_KEYS.EVENTS, JSON.stringify(DEMO_EVENTS));
   }
   if (!localStorage.getItem(STORAGE_KEYS.BUDGETS)) {
-    localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(DEMO_BUDGETS));
+    safeSetItem(STORAGE_KEYS.BUDGETS, JSON.stringify(DEMO_BUDGETS));
   }
   if (!localStorage.getItem(STORAGE_KEYS.TASKS)) {
-    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(DEMO_TASKS));
+    safeSetItem(STORAGE_KEYS.TASKS, JSON.stringify(DEMO_TASKS));
   }
   if (!localStorage.getItem(STORAGE_KEYS.VENDORS)) {
-    localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(DEMO_VENDORS));
+    safeSetItem(STORAGE_KEYS.VENDORS, JSON.stringify(DEMO_VENDORS));
   }
   if (!localStorage.getItem(STORAGE_KEYS.IDEAS)) {
-    localStorage.setItem(STORAGE_KEYS.IDEAS, JSON.stringify(DEMO_IDEAS));
+    safeSetItem(STORAGE_KEYS.IDEAS, JSON.stringify(DEMO_IDEAS));
   }
 }
 
@@ -85,7 +94,7 @@ export function saveEvent(event: PlanoraEvent): void {
   } else {
     events.unshift(event);
   }
-  localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
+  safeSetItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
 
   // Async sync to Supabase if configured
   saveSupabaseEvent(event).catch((err) =>
@@ -96,7 +105,7 @@ export function saveEvent(event: PlanoraEvent): void {
 export function deleteEvent(id: string): void {
   if (typeof window === "undefined") return;
   const events = getEvents().filter((e) => e.id !== id);
-  localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
+  safeSetItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
   for (const key of [
     STORAGE_KEYS.BUDGETS,
     STORAGE_KEYS.TASKS,
@@ -107,7 +116,7 @@ export function deleteEvent(id: string): void {
     const raw = localStorage.getItem(key);
     const map = raw ? JSON.parse(raw) : {};
     delete map[id];
-    localStorage.setItem(key, JSON.stringify(map));
+    safeSetItem(key, JSON.stringify(map));
   }
 }
 
@@ -136,7 +145,7 @@ export function saveBudgetItem(item: BudgetItem): void {
     items.push(item);
   }
   map[item.event_id] = items;
-  localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(map));
+  safeSetItem(STORAGE_KEYS.BUDGETS, JSON.stringify(map));
 
   // Async sync to Supabase if configured
   saveSupabaseBudgetItem(item).catch(() => {});
@@ -167,7 +176,7 @@ export function saveTask(task: Task): void {
     items.push(task);
   }
   map[task.event_id] = items;
-  localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(map));
+  safeSetItem(STORAGE_KEYS.TASKS, JSON.stringify(map));
 
   // Async sync to Supabase if configured
   saveSupabaseTask(task).catch(() => {});
@@ -198,7 +207,7 @@ export function saveVendor(vendor: Vendor): void {
     items.push(vendor);
   }
   map[vendor.event_id] = items;
-  localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(map));
+  safeSetItem(STORAGE_KEYS.VENDORS, JSON.stringify(map));
 
   // Async sync to Supabase if configured
   saveSupabaseVendor(vendor).catch(() => {});
@@ -229,7 +238,7 @@ export function saveIdea(idea: Idea): void {
     items.push(idea);
   }
   map[idea.event_id] = items;
-  localStorage.setItem(STORAGE_KEYS.IDEAS, JSON.stringify(map));
+  safeSetItem(STORAGE_KEYS.IDEAS, JSON.stringify(map));
 
   // Async sync to Supabase if configured
   saveSupabaseIdea(idea).catch(() => {});
@@ -254,7 +263,7 @@ export function saveAIMessage(msg: AIMessage): void {
     const items: AIMessage[] = map[msg.event_id] || [];
     items.push(msg);
     map[msg.event_id] = items;
-    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(map));
+    safeSetItem(STORAGE_KEYS.MESSAGES, JSON.stringify(map));
 
     // Async sync to Supabase if configured
     saveSupabaseAIMessage(msg).catch(() => {});
@@ -267,7 +276,7 @@ export function clearAIMessages(eventId: string): void {
     const raw = localStorage.getItem(STORAGE_KEYS.MESSAGES);
     const map = raw ? JSON.parse(raw) : {};
     delete map[eventId];
-    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(map));
+    safeSetItem(STORAGE_KEYS.MESSAGES, JSON.stringify(map));
   } catch {}
 }
 
@@ -374,22 +383,22 @@ export function applyBlueprintToEvent(
     const bRaw = localStorage.getItem(STORAGE_KEYS.BUDGETS);
     const bMap = bRaw ? JSON.parse(bRaw) : {};
     bMap[eventId] = budgets;
-    localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(bMap));
+    safeSetItem(STORAGE_KEYS.BUDGETS, JSON.stringify(bMap));
 
     const tRaw = localStorage.getItem(STORAGE_KEYS.TASKS);
     const tMap = tRaw ? JSON.parse(tRaw) : {};
     tMap[eventId] = tasks;
-    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tMap));
+    safeSetItem(STORAGE_KEYS.TASKS, JSON.stringify(tMap));
 
     const vRaw = localStorage.getItem(STORAGE_KEYS.VENDORS);
     const vMap = vRaw ? JSON.parse(vRaw) : {};
     vMap[eventId] = vendors;
-    localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(vMap));
+    safeSetItem(STORAGE_KEYS.VENDORS, JSON.stringify(vMap));
 
     const iRaw = localStorage.getItem(STORAGE_KEYS.IDEAS);
     const iMap = iRaw ? JSON.parse(iRaw) : {};
     iMap[eventId] = ideas;
-    localStorage.setItem(STORAGE_KEYS.IDEAS, JSON.stringify(iMap));
+    safeSetItem(STORAGE_KEYS.IDEAS, JSON.stringify(iMap));
 
     // Also trigger Supabase sync in background
     budgets.forEach((b) => saveSupabaseBudgetItem(b).catch(() => {}));

@@ -301,11 +301,12 @@ export default function LandingPage() {
                   <div>
                     <div className="relative aspect-4/5 w-full bg-rose-50 overflow-hidden">
                       <Image
-                        src="/images/demo-wedding.svg"
+                        src="/images/event-wedding.webp"
                         alt="Anuj's Awadhi Wedding Sangeet & Banquet"
                         width={600}
                         height={750}
                         loading="lazy"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                       />
                       <span className="absolute top-3 right-3 text-xs font-bold px-2.5 py-0.5 rounded-full bg-white/90 text-rose-700 shadow-2xs">
@@ -345,11 +346,12 @@ export default function LandingPage() {
                   <div>
                     <div className="relative aspect-4/5 w-full bg-amber-50 overflow-hidden">
                       <Image
-                        src="/images/demo-birthday.svg"
+                        src="/images/event-birthday.webp"
                         alt="Aarav's 8th Birthday Galaxy Party"
                         width={600}
                         height={750}
                         loading="lazy"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                       />
                       <span className="absolute top-3 right-3 text-xs font-bold px-2.5 py-0.5 rounded-full bg-white/90 text-amber-700 shadow-2xs">
@@ -389,11 +391,12 @@ export default function LandingPage() {
                   <div>
                     <div className="relative aspect-4/5 w-full bg-emerald-50 overflow-hidden">
                       <Image
-                        src="/images/demo-community.svg"
+                        src="/images/event-community.webp"
                         alt="Gomti Nagar Diwali Community Mela"
                         width={600}
                         height={750}
                         loading="lazy"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                       />
                       <span className="absolute top-3 right-3 text-xs font-bold px-2.5 py-0.5 rounded-full bg-white/90 text-emerald-700 shadow-2xs">

@@ -40,7 +40,7 @@ function isOpenAIKey(key: string): boolean {
  * Returns prioritized list of Gemini model candidates to attempt
  */
 function getGeminiCandidateModels(): string[] {
-  const configured = (process.env.GEMINI_MODEL || "gemini-2.5-flash").trim();
+  const configured = (process.env.GEMINI_MODEL || "gemini-3-flash-preview").trim();
   const candidates: string[] = [];
 
   if (cachedWorkingModel) {
@@ -51,13 +51,11 @@ function getGeminiCandidateModels(): string[] {
     candidates.push(configured);
   }
 
-  // Fallback candidates
+  // Fallback candidates prioritized by active availability and ultra-low latency
   const defaults = [
     "gemini-3-flash-preview",
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemma-4-26b-a4b-it",
     "gemini-3.8-flash",
+    "gemma-4-26b-a4b-it",
   ];
 
   for (const m of defaults) {
