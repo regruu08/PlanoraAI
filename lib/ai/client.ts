@@ -21,6 +21,7 @@ import type { AIBlueprintResult, AICopilotResult } from "./types";
 
 const RAW_API_KEY =
   process.env.GEMINI_API_KEY ||
+  process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
   process.env.GOOGLE_API_KEY ||
   process.env.OPENAI_API_KEY ||
   "";
@@ -40,7 +41,7 @@ function isOpenAIKey(key: string): boolean {
  * Returns prioritized list of Gemini model candidates to attempt
  */
 function getGeminiCandidateModels(): string[] {
-  const configured = (process.env.GEMINI_MODEL || "gemini-3-flash-preview").trim();
+  const configured = (process.env.GEMINI_MODEL || "gemini-3.8-flash").trim();
   const candidates: string[] = [];
 
   if (cachedWorkingModel) {
@@ -53,9 +54,10 @@ function getGeminiCandidateModels(): string[] {
 
   // Fallback candidates prioritized by active availability and ultra-low latency
   const defaults = [
-    "gemini-3-flash-preview",
     "gemini-3.8-flash",
+    "gemini-flash-latest",
     "gemma-4-26b-a4b-it",
+    "gemini-2.5-flash",
   ];
 
   for (const m of defaults) {
@@ -135,7 +137,7 @@ async function callGemini(
     }
 
     // Models like gemini-2.5/3.x support disabling thinking budget for fast response times
-    if (!model.startsWith("gemma")) {
+    if (model.includes("2.5") || model.includes("3.8") || model.includes("thinking")) {
       generationConfig.thinkingConfig = { thinkingBudget: 0 };
     }
 

@@ -86,3 +86,114 @@ export function sortTasksByUrgency<T extends Task>(tasks: T[]): T[] {
 export function localDateString(date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
+
+/**
+ * Generates an RFC 5545 compliant iCalendar (.ics) string
+ * Compatible with Google Calendar, Apple Calendar, and Microsoft Outlook
+ */
+export function generateCalendarICS(
+  event: { id: string; name: string; event_date: string; location: string; event_type?: string; total_budget?: number },
+  tasks: Array<{ id: string; title: string; description?: string; due_date: string; priority?: string; status?: string }> = []
+): string {
+  const sanitize = (text: string) =>
+    (text || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+
+  const formatDateICS = (dateStr: string) => dateStr.replace(/-/g, "");
+
+  const eventDateFormatted = formatDateICS(event.event_date);
+  const now = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
+
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Planora AI//Celebration Planner//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    `X-WR-CALNAME:${sanitize(`${event.name} Timeline`)}`,
+    "BEGIN:VEVENT",
+    `UID:planora-main-${event.id}@planora.ai`,
+    `DTSTAMP:${now}`,
+    `DTSTART;VALUE=DATE:${eventDateFormatted}`,
+    `DTEND;VALUE=DATE:${eventDateFormatted}`,
+    `SUMMARY:${sanitize(`🎉 ${event.name} (${event.event_type || "Event"})`)}`,
+    `LOCATION:${sanitize(event.location)}`,
+    `DESCRIPTION:${sanitize(`Celebration Day! Total Budget: INR ${event.total_budget || 0}. Planned with Planora AI.`)}`,
+    "STATUS:CONFIRMED",
+    "END:VEVENT",
+  ];
+
+  for (const task of tasks) {
+    const taskDate = formatDateICS(task.due_date);
+    const isCompleted = task.status === "completed";
+    ics.push(
+      "BEGIN:VEVENT",
+      `UID:planora-task-${task.id}@planora.ai`,
+      `DTSTAMP:${now}`,
+      `DTSTART;VALUE=DATE:${taskDate}`,
+      `DTEND;VALUE=DATE:${taskDate}`,
+      `SUMMARY:${sanitize(`${isCompleted ? "✓ " : ""}[${(task.priority || "Task").toUpperCase()}] ${task.title}`)}`,
+      `DESCRIPTION:${sanitize(`${task.description || ""} (Status: ${task.status || "pending"})`)}`,
+      isCompleted ? "STATUS:COMPLETED" : "STATUS:CONFIRMED",
+      "BEGIN:VALARM",
+      "ACTION:DISPLAY",
+      "DESCRIPTION:Task Due Reminder",
+      "TRIGGER:-P1D",
+      "END:VALARM",
+      "END:VEVENT"
+    );
+  }
+
+  ics.push("END:VCALENDAR");
+  return ics.join("\r\n");
+}
+
+/**
+ * Generates CSV string for budget breakdown
+ */
+export function generateBudgetCSV(
+  event: { name: string; total_budget: number },
+  budgets: Array<{ category: string; allocated_amount: number; actual_amount: number; priority: string; reason?: string }>
+): string {
+  const escapeCsv = (str: string) => {
+    const val = (str || "").replace(/"/g, '""');
+    return `"${val}"`;
+  };
+
+  const headers = ["Category", "Allocated (INR)", "Actual Spent (INR)", "Variance (INR)", "Priority", "Reason / Notes"];
+  const rows = budgets.map((b) => {
+    const variance = b.allocated_amount - (b.actual_amount || 0);
+    return [
+      escapeCsv(b.category),
+      b.allocated_amount,
+      b.actual_amount || 0,
+      variance,
+      escapeCsv(b.priority),
+      escapeCsv(b.reason || ""),
+    ].join(",");
+  });
+
+  const summary = [
+    "",
+    `"Total Event Budget",${event.total_budget}`,
+    `"Total Allocated",${budgets.reduce((sum, b) => sum + b.allocated_amount, 0)}`,
+    `"Total Spent",${budgets.reduce((sum, b) => sum + (b.actual_amount || 0), 0)}`,
+  ];
+
+  return [headers.join(","), ...rows, ...summary].join("\r\n");
+}
+
+/**
+ * Client-side file downloader
+ */
+export function downloadFile(content: string, filename: string, mimeType: string): void {
+  if (typeof window === "undefined") return;
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

@@ -20,9 +20,12 @@ import {
   Bot,
   RefreshCw,
   Printer,
-  ChevronRight
+  ChevronRight,
+  CalendarPlus,
+  FileSpreadsheet
 } from 'lucide-react';
-import { applyBlueprintToEvent } from '@/lib/storage';
+import { applyBlueprintToEvent, getTasks, getBudgets } from '@/lib/storage';
+import { generateCalendarICS, generateBudgetCSV, downloadFile } from '@/lib/utils';
 
 interface EventHeaderProps {
   event: PlanoraEvent;
@@ -49,6 +52,30 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
   const handlePrint = () => {
     if (typeof window !== 'undefined') {
       window.print();
+    }
+  };
+
+  const handleExportICS = () => {
+    try {
+      const tasks = getTasks(event.id);
+      const icsContent = generateCalendarICS(event, tasks);
+      const cleanName = (event.name || 'event').toLowerCase().replace(/[^a-z0-9]/g, '-');
+      downloadFile(icsContent, `${cleanName}-timeline.ics`, 'text/calendar;charset=utf-8');
+      triggerConfetti();
+    } catch (err) {
+      console.error('Failed to export calendar:', err);
+    }
+  };
+
+  const handleExportCSV = () => {
+    try {
+      const budgets = getBudgets(event.id);
+      const csvContent = generateBudgetCSV(event, budgets);
+      const cleanName = (event.name || 'event').toLowerCase().replace(/[^a-z0-9]/g, '-');
+      downloadFile(csvContent, `${cleanName}-budget.csv`, 'text/csv;charset=utf-8');
+      triggerConfetti();
+    } catch (err) {
+      console.error('Failed to export budget CSV:', err);
     }
   };
 
@@ -152,12 +179,33 @@ export default function EventHeader({ event, onRefresh }: EventHeaderProps) {
           {/* Action Buttons */}
           <div className="flex items-center gap-2 print:hidden">
             <button
+              onClick={handleExportICS}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 transition-colors shadow-xs"
+              title="Export timeline milestones to Google Calendar, Apple Calendar, or Outlook (.ics)"
+            >
+              <CalendarPlus className="w-3.5 h-3.5 text-zinc-500" />
+              <span className="hidden sm:inline">Export Calendar (.ics)</span>
+              <span className="sm:hidden">.ics</span>
+            </button>
+
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 transition-colors shadow-xs"
+              title="Export budget allocations and expense tracking to spreadsheet CSV"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-zinc-500" />
+              <span className="hidden sm:inline">Export CSV</span>
+              <span className="sm:hidden">CSV</span>
+            </button>
+
+            <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 transition-colors shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 transition-colors shadow-xs"
               title="Print or Save PDF"
             >
               <Printer className="w-3.5 h-3.5 text-zinc-500" />
-              <span>Export PDF / Print</span>
+              <span className="hidden sm:inline">Export PDF / Print</span>
+              <span className="sm:hidden">PDF</span>
             </button>
 
             <button

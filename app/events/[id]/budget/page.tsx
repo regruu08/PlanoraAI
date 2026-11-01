@@ -15,8 +15,13 @@ import {
   Edit2,
   Save,
   X,
-  Lightbulb
+  Lightbulb,
+  FileSpreadsheet,
+  Users,
+  UtensilsCrossed,
+  ShieldCheck
 } from 'lucide-react';
+import { generateBudgetCSV, downloadFile } from '@/lib/utils';
 
 export default function BudgetPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
@@ -56,6 +61,36 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
   const remaining = event.total_budget - totalActual;
   const isOverAllocated = totalAllocated > event.total_budget;
   const isOverSpent = totalActual > event.total_budget;
+
+  // Smart Per-Guest & Contingency Reserve calculations
+  const costPerGuest = event.guest_count > 0 ? Math.round(event.total_budget / event.guest_count) : 0;
+  const foodItem = budgets.find(
+    (b) =>
+      b.category.toLowerCase().includes('catering') ||
+      b.category.toLowerCase().includes('food') ||
+      b.category.toLowerCase().includes('dining')
+  );
+  const foodCostPerGuest = (foodItem && event.guest_count > 0) ? Math.round(foodItem.allocated_amount / event.guest_count) : 0;
+  const contingencyItem = budgets.find(
+    (b) =>
+      b.category.toLowerCase().includes('contingency') ||
+      b.category.toLowerCase().includes('buffer') ||
+      b.category.toLowerCase().includes('hospitality pool')
+  );
+  const contingencyAllocated = contingencyItem
+    ? contingencyItem.allocated_amount
+    : Math.max(0, event.total_budget - totalAllocated);
+  const contingencyPct = event.total_budget > 0 ? Math.round((contingencyAllocated / event.total_budget) * 100) : 0;
+
+  const handleExportCSV = () => {
+    try {
+      const csv = generateBudgetCSV(event, budgets);
+      const cleanName = (event.name || 'event').toLowerCase().replace(/[^a-z0-9]/g, '-');
+      downloadFile(csv, `${cleanName}-budget.csv`, 'text/csv;charset=utf-8');
+    } catch (err) {
+      console.error('Export CSV failed:', err);
+    }
+  };
 
   const startEdit = (item: BudgetItem) => {
     setEditingId(item.id);
@@ -171,6 +206,44 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
 
         </div>
 
+        {/* Dynamic Per-Guest Economics & Contingency Health */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 rounded-2xl bg-white border border-zinc-200 shadow-xs flex items-center gap-3.5">
+            <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] uppercase font-bold text-zinc-400 block">Total Cost / Guest</span>
+              <span className="text-lg font-black text-zinc-900">{formatINR(costPerGuest)} <span className="text-xs text-zinc-400 font-normal">/ person</span></span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-white border border-zinc-200 shadow-xs flex items-center gap-3.5">
+            <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600">
+              <UtensilsCrossed className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] uppercase font-bold text-zinc-400 block">Catering Plate Estimate</span>
+              <span className="text-lg font-black text-zinc-900">{formatINR(foodCostPerGuest)} <span className="text-xs text-zinc-400 font-normal">/ plate</span></span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-white border border-zinc-200 shadow-xs flex items-center gap-3.5">
+            <div className={`p-2.5 rounded-xl ${contingencyPct >= 5 ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] uppercase font-bold text-zinc-400 block">Contingency Reserve</span>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-black text-zinc-900">{formatINR(contingencyAllocated)}</span>
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${contingencyPct >= 5 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                  {contingencyPct}% {contingencyPct >= 5 ? 'Healthy Buffer' : 'Low Buffer'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Visual Allocation Distribution Bar */}
         <div className="p-6 rounded-3xl bg-white border border-zinc-200 shadow-sm space-y-3">
           <div className="flex items-center justify-between text-xs font-bold text-zinc-700">
@@ -222,13 +295,24 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
             </p>
           </div>
 
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-zinc-900 text-white hover:bg-zinc-800 transition-colors shadow-xs"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Custom Expense</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportCSV}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 transition-colors shadow-xs"
+              title="Download budget allocations spreadsheet in CSV format"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-zinc-500" />
+              <span>Export CSV</span>
+            </button>
+
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-zinc-900 text-white hover:bg-zinc-800 transition-colors shadow-xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Custom Expense</span>
+            </button>
+          </div>
         </div>
 
         {/* Add Custom Item Modal */}

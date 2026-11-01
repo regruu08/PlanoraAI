@@ -6,11 +6,14 @@ An event planning workspace for weddings, birthdays, and community celebrations.
 
 ## Current experience
 
-- Responsive landing page, dashboard, event creation, and authentication screens.
-- Event workspaces with budgets, timeline tasks, vendors and checklists, personalized ideas, and a planning copilot.
-- Searchable event cards and next actions derived from pending tasks.
-- Editable actual spending, task completion, vendor status, checklists, and saved ideas.
-- Demo planning without external credentials, with browser-local persistence.
+- Responsive luxury landing page, dashboard, event creation, and dark mode workspace.
+- Event workspaces with budgets, timeline tasks, vendors and checklists, personalized ideas, and an AI planning copilot.
+- One-click **Calendar (.ics) export** compatible with Google Calendar, Apple Calendar, and Outlook.
+- Instant **Budget Spreadsheet (.csv) export** with itemized categories, variance, and summaries for Excel/Sheets.
+- **Per-guest cost breakdown** and **contingency reserve health status** (healthy buffer vs low buffer).
+- Searchable event cards and prioritized next actions derived from pending tasks.
+- Editable actual spending, interactive vendor quote logger with estimate variance, task completion, and saved ideas.
+- Zero-auth demo mode with browser-local persistence and graceful offline procedural fallback.
 - Plan refresh preserves existing financial records, task progress, vendor progress, and saved ideas.
 - Keyboard focus indicators, labeled inputs, mobile navigation, error/empty states, and reduced-motion support.
 

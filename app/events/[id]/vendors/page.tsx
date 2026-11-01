@@ -34,6 +34,20 @@ export default function VendorsPage({ params }: { params: Promise<{ id: string }
   const [activeVendorForChecklist, setActiveVendorForChecklist] = useState<string | null>(null);
   const [newChecklistLabel, setNewChecklistLabel] = useState('');
 
+  // Quote editing state
+  const [editingQuoteVendorId, setEditingQuoteVendorId] = useState<string | null>(null);
+  const [editQuoteInput, setEditQuoteInput] = useState<number | string>('');
+
+  const handleSaveQuote = (vendor: Vendor) => {
+    const quoteNum = Number(editQuoteInput);
+    if (!isNaN(quoteNum) && quoteNum >= 0) {
+      const updated: Vendor = { ...vendor, actual_quote: quoteNum };
+      saveVendor(updated);
+      setEditingQuoteVendorId(null);
+      loadData();
+    }
+  };
+
   const loadData = useCallback(() => {
     const evt = getEventById(eventId);
     if (evt) {
@@ -299,13 +313,60 @@ export default function VendorsPage({ params }: { params: Promise<{ id: string }
                     </div>
                   </div>
 
-                  {/* Financial context */}
-                  <div className="flex items-center justify-between text-xs py-3 border-b border-zinc-100 text-zinc-600 font-medium">
+                  {/* Financial context & Quote Tracker */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs py-3 border-b border-zinc-100 text-zinc-600 font-medium gap-2">
                     <span>Estimated: <strong className="text-zinc-900">{formatINR(vendor.estimated_budget)}</strong></span>
-                    {vendor.actual_quote ? (
-                      <span>Quote: <strong className="text-emerald-700">{formatINR(vendor.actual_quote)}</strong></span>
+                    
+                    {editingQuoteVendorId === vendor.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          placeholder="₹ Quote"
+                          value={editQuoteInput}
+                          onChange={(e) => setEditQuoteInput(e.target.value)}
+                          className="w-24 px-2 py-1 text-xs border border-zinc-300 rounded-lg focus:outline-none"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSaveQuote(vendor)}
+                          className="px-2.5 py-1 bg-zinc-900 text-white rounded-lg text-[10px] font-bold hover:bg-zinc-800"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingQuoteVendorId(null)}
+                          className="px-1.5 py-1 text-zinc-400 hover:text-zinc-600 text-[10px]"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     ) : (
-                      <span className="text-zinc-400">No quote finalized</span>
+                      <div className="flex items-center gap-2">
+                        {vendor.actual_quote ? (
+                          <div className="flex items-center gap-1.5">
+                            <span>Quote: <strong className="text-emerald-700">{formatINR(vendor.actual_quote)}</strong></span>
+                            {vendor.actual_quote > vendor.estimated_budget && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 font-bold">
+                                +{formatINR(vendor.actual_quote - vendor.estimated_budget)}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-zinc-400">No quote logged</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingQuoteVendorId(vendor.id);
+                            setEditQuoteInput(vendor.actual_quote || vendor.estimated_budget || '');
+                          }}
+                          className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline"
+                        >
+                          {vendor.actual_quote ? 'Edit' : '+ Log Quote'}
+                        </button>
+                      </div>
                     )}
                   </div>
 

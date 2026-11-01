@@ -314,6 +314,92 @@ await test("Chat route returns contextual response", async () => {
   assert.equal(response.status, 200);
   assert.ok((await response.json()).reply.includes(base.name));
 });
+
+// --- Calendar .ics & Budget .csv Export Tests ---
+await test("Calendar .ics generation produces valid RFC 5545 calendar", () => {
+  const sampleTasks = [
+    {
+      id: "task-1",
+      title: "Confirm caterer tasting",
+      description: "Sample description",
+      due_date: "2026-11-20",
+      priority: "critical",
+      status: "pending",
+    },
+    {
+      id: "task-2",
+      title: "Book DJ",
+      description: "Music setup",
+      due_date: "2026-11-25",
+      priority: "high",
+      status: "completed",
+    },
+  ];
+  const ics = utils.generateCalendarICS(base, sampleTasks);
+  assert.ok(ics.includes("BEGIN:VCALENDAR"));
+  assert.ok(ics.includes("VERSION:2.0"));
+  assert.ok(ics.includes("END:VCALENDAR"));
+  assert.ok(ics.includes("BEGIN:VEVENT"));
+  assert.ok(ics.includes(base.location));
+  assert.ok(ics.includes("Confirm caterer tasting"));
+  assert.ok(ics.includes("TRIGGER:-P1D"));
+  assert.ok(ics.includes("STATUS:COMPLETED"));
+});
+
+await test("Calendar .ics generation safely escapes special characters", () => {
+  const dirtyEvent = {
+    ...base,
+    name: "Rohan & Priya, Lucknow; Grand Celebration\nPart 2",
+    location: "Hotel Taj, Gomti Nagar; Hall A",
+  };
+  const ics = utils.generateCalendarICS(dirtyEvent, []);
+  assert.ok(ics.includes("Rohan & Priya\\, Lucknow\\; Grand Celebration\\nPart 2"));
+  assert.ok(ics.includes("Hotel Taj\\, Gomti Nagar\\; Hall A"));
+});
+
+await test("Budget .csv generation exports correct headers and variance", () => {
+  const sampleBudgets = [
+    {
+      category: "Catering",
+      allocated_amount: 250000,
+      actual_amount: 240000,
+      priority: "critical",
+      reason: "Buffet for 300 guests",
+    },
+    {
+      category: "Decor, Lighting & Stage",
+      allocated_amount: 80000,
+      actual_amount: 90000,
+      priority: "high",
+      reason: "Extra floral setup",
+    },
+  ];
+  const csv = utils.generateBudgetCSV(base, sampleBudgets);
+  assert.ok(csv.includes("Category,Allocated (INR),Actual Spent (INR),Variance (INR),Priority,Reason / Notes"));
+  assert.ok(csv.includes('"Catering",250000,240000,10000,"critical","Buffet for 300 guests"'));
+  assert.ok(csv.includes('"Decor, Lighting & Stage",80000,90000,-10000,"high","Extra floral setup"'));
+  assert.ok(csv.includes('"Total Event Budget",800000'));
+});
+
+await test("Storage vendor quote tracking persists actual quotes", () => {
+  const sampleVendor = {
+    id: "vend-test-1",
+    event_id: base.id,
+    vendor_type: "Photography",
+    name: "Pixel Studios",
+    estimated_budget: 90000,
+    actual_quote: 85000,
+    status: "quote_received",
+    checklist: [{ id: "vc-1", vendor_id: "vend-test-1", label: "Drone clearance", is_completed: true }],
+    created_at: new Date().toISOString(),
+  };
+  storage.saveVendor(sampleVendor);
+  const loaded = storage.getVendors(base.id).find((v) => v.id === "vend-test-1");
+  assert.ok(loaded);
+  assert.equal(loaded.actual_quote, 85000);
+  assert.equal(loaded.name, "Pixel Studios");
+  assert.equal(loaded.status, "quote_received");
+});
 console.log(
   `\n${passed} passed, ${failed} failed. Tests run against application modules with no live API calls.`,
 );

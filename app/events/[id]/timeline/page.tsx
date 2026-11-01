@@ -12,8 +12,10 @@ import {
   CheckCircle2, 
   Circle, 
   Plus, 
-  X
+  X,
+  CalendarPlus
 } from 'lucide-react';
+import { generateCalendarICS, downloadFile } from '@/lib/utils';
 
 export default function TimelinePage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
@@ -87,6 +89,19 @@ export default function TimelinePage({ params }: { params: Promise<{ id: string 
     loadData();
   };
 
+  const handleExportCalendar = () => {
+    try {
+      const ics = generateCalendarICS(event, tasks);
+      const cleanName = (event.name || 'event').toLowerCase().replace(/[^a-z0-9]/g, '-');
+      downloadFile(ics, `${cleanName}-milestones.ics`, 'text/calendar;charset=utf-8');
+      try {
+        confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
+      } catch {}
+    } catch (err) {
+      console.error('Export calendar failed:', err);
+    }
+  };
+
   // Filter tasks
   const filteredTasks = tasks.filter((t) => {
     if (filter === 'pending') return t.status === 'pending';
@@ -121,6 +136,15 @@ export default function TimelinePage({ params }: { params: Promise<{ id: string 
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportCalendar}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 transition-colors shadow-xs"
+              title="Download RFC 5545 .ics calendar file for Google Calendar, Apple Calendar, or Outlook"
+            >
+              <CalendarPlus className="w-3.5 h-3.5 text-zinc-500" />
+              <span>Export Calendar (.ics)</span>
+            </button>
+
             <button
               onClick={() => setShowAddForm(!showAddForm)}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-zinc-900 text-white hover:bg-zinc-800 transition-colors shadow-xs"
