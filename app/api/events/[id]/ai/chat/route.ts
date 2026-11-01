@@ -64,6 +64,7 @@ export async function POST(
       reply: result.reply,
       mode: result.mode,
       modelUsed: result.modelUsed,
+      reasoningTrace: result.reasoningTrace,
     });
   } catch (err) {
     console.error("[ai/chat] Unhandled chat response error:", err);

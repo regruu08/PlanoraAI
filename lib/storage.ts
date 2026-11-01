@@ -151,6 +151,18 @@ export function saveBudgetItem(item: BudgetItem): void {
   saveSupabaseBudgetItem(item).catch(() => {});
 }
 
+export function saveBudgets(eventId: string, items: BudgetItem[]): void {
+  if (typeof window === "undefined") return;
+  initLocalStorage();
+  const raw = localStorage.getItem(STORAGE_KEYS.BUDGETS);
+  const map = raw ? JSON.parse(raw) : { ...DEMO_BUDGETS };
+  map[eventId] = items;
+  safeSetItem(STORAGE_KEYS.BUDGETS, JSON.stringify(map));
+  for (const item of items) {
+    saveSupabaseBudgetItem(item).catch(() => {});
+  }
+}
+
 export function getTasks(eventId: string): Task[] {
   if (typeof window === "undefined") return DEMO_TASKS[eventId] || [];
   initLocalStorage();

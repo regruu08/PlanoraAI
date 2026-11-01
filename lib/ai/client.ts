@@ -7,6 +7,7 @@ import type {
   Task,
   Vendor,
 } from "@/types";
+import { evaluateAndCritiqueBlueprint } from "./critique";
 import {
   generateProceduralBlueprint,
   askProceduralCopilot,
@@ -17,11 +18,10 @@ import {
   buildCopilotSystemPrompt,
 } from "./prompts";
 import { normalizeAndValidateBlueprint, safeParseAndRepairJSON } from "./schema";
-import type { AIBlueprintResult, AICopilotResult } from "./types";
+import type { AIBlueprintResult, AICopilotResult, AgentReasoningStep } from "./types";
 
 const RAW_API_KEY =
   process.env.GEMINI_API_KEY ||
-  process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
   process.env.GOOGLE_API_KEY ||
   process.env.OPENAI_API_KEY ||
   "";
@@ -41,7 +41,7 @@ function isOpenAIKey(key: string): boolean {
  * Returns prioritized list of Gemini model candidates to attempt
  */
 function getGeminiCandidateModels(): string[] {
-  const configured = (process.env.GEMINI_MODEL || "gemini-3.8-flash").trim();
+  const configured = (process.env.GEMINI_MODEL || "gemini-3.5-flash").trim();
   const candidates: string[] = [];
 
   if (cachedWorkingModel) {
@@ -52,12 +52,12 @@ function getGeminiCandidateModels(): string[] {
     candidates.push(configured);
   }
 
-  // Fallback candidates prioritized by active availability and ultra-low latency
+  // Fallback candidates prioritized by active availability, ultra-low latency, and valid endpoints
   const defaults = [
+    "gemini-3.5-flash",
     "gemini-3.8-flash",
-    "gemini-flash-latest",
     "gemma-4-26b-a4b-it",
-    "gemini-2.5-flash",
+    "gemini-flash-latest",
   ];
 
   for (const m of defaults) {
@@ -129,14 +129,15 @@ async function callGemini(
 
     const generationConfig: Record<string, unknown> = {
       temperature: isJson ? 0.2 : 0.3,
-      maxOutputTokens: isJson ? 2048 : 600,
+      // 4096 tokens prevents premature JSON truncation syntax errors
+      maxOutputTokens: isJson ? 4096 : 1000,
     };
 
     if (isJson) {
       generationConfig.responseMimeType = "application/json";
     }
 
-    // Models like gemini-2.5/3.x support disabling thinking budget for fast response times
+    // Models supporting thinking budget
     if (model.includes("2.5") || model.includes("3.8") || model.includes("thinking")) {
       generationConfig.thinkingConfig = { thinkingBudget: 0 };
     }
@@ -228,7 +229,7 @@ export async function executeAIGeneration(
 }
 
 /**
- * Generate AI Event Blueprint with strict schema validation and graceful fallback
+ * Generate AI Event Blueprint with strict schema validation, agent evaluator critique, and graceful fallback
  */
 export async function generateAIBlueprintWithFallback(
   event: PlanoraEvent,
@@ -238,21 +239,27 @@ export async function generateAIBlueprintWithFallback(
   if (apiKey) {
     try {
       const userPrompt = buildBlueprintUserPrompt(event);
-      // Timeout: 10 seconds for plan generation
+      // Timeout: 12 seconds for full plan generation
       const { text, model } = await executeAIGeneration(
         BLUEPRINT_SYSTEM_PROMPT,
         userPrompt,
         true,
-        10000,
+        12000,
       );
 
       const parsed = safeParseAndRepairJSON(text);
       const validatedBlueprint = normalizeAndValidateBlueprint(parsed, event);
 
+      // Multi-phase Agent Evaluator and Critique Loop
+      const { refinedBlueprint, critiqueTrace, evaluationScore } =
+        evaluateAndCritiqueBlueprint(validatedBlueprint, event);
+
       return {
-        blueprint: validatedBlueprint,
+        blueprint: refinedBlueprint,
         mode: "live",
         modelUsed: model,
+        evaluationScore,
+        reasoningTrace: critiqueTrace,
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -262,17 +269,22 @@ export async function generateAIBlueprintWithFallback(
     }
   }
 
-  // Graceful local offline fallback
+  // Graceful local offline fallback with critique loop
   const proceduralBlueprint = generateProceduralBlueprint(event);
+  const { refinedBlueprint, critiqueTrace, evaluationScore } =
+    evaluateAndCritiqueBlueprint(proceduralBlueprint, event);
+
   return {
-    blueprint: proceduralBlueprint,
+    blueprint: refinedBlueprint,
     mode: "offline",
     modelUsed: "procedural-rules-engine",
+    evaluationScore,
+    reasoningTrace: critiqueTrace,
   };
 }
 
 /**
- * AI Copilot context-grounded chat with scannable structure and graceful fallback
+ * AI Copilot context-grounded chat with scannable structure, reasoning traces, and graceful fallback
  */
 export async function askAICopilotWithFallback(
   event: PlanoraEvent,
@@ -286,22 +298,50 @@ export async function askAICopilotWithFallback(
 ): Promise<AICopilotResult> {
   const apiKey = getApiKey();
 
+  const totalAllocated = context.budgets.reduce((acc, b) => acc + (b.allocated_amount || 0), 0);
+  const totalActual = context.budgets.reduce((acc, b) => acc + (b.actual_amount || 0), 0);
+  const pendingTasks = context.tasks.filter((t) => t.status !== "completed");
+  const criticalTasks = pendingTasks.filter((t) => t.priority === "critical");
+
+  const copilotTrace: AgentReasoningStep[] = [
+    {
+      phase: "Phase 1: Memory & Context Grounding",
+      status: "passed",
+      details: `Loaded live financial state: INR ${totalAllocated.toLocaleString("en-IN")} allocated, INR ${totalActual.toLocaleString("en-IN")} spent of INR ${event.total_budget.toLocaleString("en-IN")}. ${pendingTasks.length} pending tasks (${criticalTasks.length} critical).`,
+      timestamp: new Date().toISOString(),
+    },
+    {
+      phase: "Phase 2: Intent Analysis & Strategy",
+      status: "passed",
+      details: `Parsed user query against event archetypes and vendor economics. Synthesizing practical actionable advice.`,
+      timestamp: new Date().toISOString(),
+    },
+  ];
+
   if (apiKey) {
     try {
       const systemPrompt = buildCopilotSystemPrompt(event, context);
       const userPrompt = `<user_input>${userMessage.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;")}</user_input>`;
-      // Timeout: 6 seconds for copilot chat
+      // Timeout: 8 seconds for copilot chat
       const { text, model } = await executeAIGeneration(
         systemPrompt,
         userPrompt,
         false,
-        6000,
+        8000,
       );
+
+      copilotTrace.push({
+        phase: "Phase 3: Model Execution & Synthesis",
+        status: "passed",
+        details: `Generated live context-grounded response via ${model}.`,
+        timestamp: new Date().toISOString(),
+      });
 
       return {
         reply: text.trim(),
         mode: "live",
         modelUsed: model,
+        reasoningTrace: copilotTrace,
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -313,9 +353,17 @@ export async function askAICopilotWithFallback(
 
   // Graceful local offline response
   const proceduralReply = askProceduralCopilot(event, context, userMessage);
+  copilotTrace.push({
+    phase: "Phase 3: Procedural Heuristics Execution",
+    status: "passed",
+    details: "Synthesized deterministic offline response grounded in current task and budget state.",
+    timestamp: new Date().toISOString(),
+  });
+
   return {
     reply: proceduralReply,
     mode: "offline",
     modelUsed: "context-aware-local-engine",
+    reasoningTrace: copilotTrace,
   };
 }

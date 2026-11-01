@@ -400,6 +400,91 @@ await test("Storage vendor quote tracking persists actual quotes", () => {
   assert.equal(loaded.name, "Pixel Studios");
   assert.equal(loaded.status, "quote_received");
 });
+
+const readiness = load("lib/readiness.ts");
+const simulation = load("lib/simulation.ts");
+const critique = load("lib/ai/critique.ts");
+
+await test("calculateEventReadiness returns bounded 0-100 score and detects high-risk alerts", () => {
+  const testBudgets = [
+    { id: "b1", event_id: base.id, category: "Venue Rental", allocated_amount: 300000, actual_amount: 250000, priority: "critical" },
+    { id: "b2", event_id: base.id, category: "Catering", allocated_amount: 250000, actual_amount: 200000, priority: "critical" },
+    { id: "b3", event_id: base.id, category: "Contingency Buffer", allocated_amount: 60000, actual_amount: 0, priority: "low" },
+  ];
+  const testTasks = [
+    { id: "t1", event_id: base.id, title: "Book Hall", due_date: "2020-01-01", priority: "critical", status: "pending" },
+    { id: "t2", event_id: base.id, title: "Tasting", due_date: base.event_date, priority: "high", status: "completed" },
+  ];
+  const testVendors = [
+    { id: "v1", event_id: base.id, vendor_type: "Banquet Venue", status: "needed", checklist: [{ id: "c1", label: "Check generator", is_completed: true }] },
+  ];
+
+  const report = readiness.calculateEventReadiness(base, testBudgets, testTasks, testVendors);
+  assert.ok(report.overallScore >= 0 && report.overallScore <= 100);
+  assert.ok(report.breakdown.budgetHealth <= 25);
+  assert.ok(report.breakdown.timelineHealth <= 25);
+  assert.ok(report.breakdown.vendorHealth <= 25);
+  assert.ok(report.breakdown.checklistHealth <= 25);
+  assert.ok(report.detectedRisks.some((r) => r.id === "risk-overdue-critical"));
+});
+
+await test("simulateEventScenario scales catering and normalizes rebalanced budget", () => {
+  const sampleBudgets = [
+    { id: "b1", event_id: base.id, category: "Catering & Dining", allocated_amount: 300000, actual_amount: 0, priority: "critical" },
+    { id: "b2", event_id: base.id, category: "Photography", allocated_amount: 100000, actual_amount: 0, priority: "high" },
+    { id: "b3", event_id: base.id, category: "Venue", allocated_amount: 400000, actual_amount: 0, priority: "critical" },
+  ];
+  const result = simulation.simulateEventScenario(base, sampleBudgets, { guestDelta: 50, budgetDeltaPercent: 10 });
+  assert.equal(result.simulatedGuests, 350);
+  assert.equal(result.simulatedBudget, 880000);
+  assert.ok(result.cateringCostPerPlate > 0);
+  const sum = result.categories.reduce((acc, c) => acc + c.simulatedAllocated, 0);
+  assert.equal(sum, result.simulatedBudget);
+});
+
+await test("simulateEventScenario triggers capacity warning on high guest surge", () => {
+  const sampleBudgets = [
+    { id: "b1", event_id: base.id, category: "Catering", allocated_amount: 300000, actual_amount: 0, priority: "critical" },
+  ];
+  const result = simulation.simulateEventScenario(base, sampleBudgets, { guestDelta: 120, budgetDeltaPercent: 0 });
+  assert.ok(result.capacityWarning && result.capacityWarning.includes("exceeds typical hall buffer"));
+});
+
+await test("evaluateAndCritiqueBlueprint executes 5-phase loop and auto-refines blueprint", () => {
+  const unrefined = {
+    budgetPlan: [
+      { category: "Venue", allocatedAmount: 500000, priority: "critical", reason: "Hall" },
+      { category: "Catering", allocatedAmount: 400000, priority: "critical", reason: "Food" }, // Sum = 900k > 800k total
+    ],
+    timeline: [
+      { title: "Old Task", description: "Desc", dueDate: "2019-01-01", priority: "critical" },
+    ],
+    vendors: [],
+    personalizedIdeas: [],
+    nextActions: [],
+  };
+
+  const { refinedBlueprint, critiqueTrace, evaluationScore } = critique.evaluateAndCritiqueBlueprint(unrefined, base);
+  assert.ok(critiqueTrace.length >= 4);
+  assert.ok(evaluationScore >= 70);
+  const sum = refinedBlueprint.budgetPlan.reduce((acc, b) => acc + b.allocatedAmount, 0);
+  assert.ok(sum <= base.total_budget);
+  assert.ok(refinedBlueprint.budgetPlan.some((b) => b.category.toLowerCase().includes("contingency") || b.category.toLowerCase().includes("buffer")));
+  assert.ok(refinedBlueprint.timeline[0].dueDate >= utils.localDateString());
+  assert.ok(refinedBlueprint.vendors.length > 0);
+});
+
+await test("Storage saveBudgets persists multiple budget items in batch", () => {
+  const batch = [
+    { id: "bgt-batch-1", event_id: base.id, category: "Band & Dhol", allocated_amount: 25000, actual_amount: 0, priority: "medium" },
+    { id: "bgt-batch-2", event_id: base.id, category: "Lighting", allocated_amount: 15000, actual_amount: 0, priority: "low" },
+  ];
+  storage.saveBudgets(base.id, batch);
+  const loaded = storage.getBudgets(base.id);
+  assert.ok(loaded.some((b) => b.id === "bgt-batch-1"));
+  assert.ok(loaded.some((b) => b.id === "bgt-batch-2"));
+});
+
 console.log(
   `\n${passed} passed, ${failed} failed. Tests run against application modules with no live API calls.`,
 );

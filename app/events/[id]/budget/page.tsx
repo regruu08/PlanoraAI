@@ -22,6 +22,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { generateBudgetCSV, downloadFile } from '@/lib/utils';
+import WhatIfSimulator from '@/components/WhatIfSimulator';
 
 export default function BudgetPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
@@ -275,6 +276,13 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
             ))}
           </div>
         </div>
+
+        {/* AI What-If Scenario Simulator */}
+        <WhatIfSimulator
+          event={event}
+          budgets={budgets}
+          onApplied={loadData}
+        />
 
         {/* Overspending Warning Alert */}
         {isOverSpent && (

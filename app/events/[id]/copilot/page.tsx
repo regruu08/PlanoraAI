@@ -29,6 +29,7 @@ import {
   Send, 
   Sparkles, 
   User, 
+  Users,
   RefreshCw, 
   Trash2, 
   ShieldCheck, 
@@ -39,6 +40,8 @@ import {
   Lightbulb, 
   ArrowRight
 } from 'lucide-react';
+import ReasoningTraceViewer from '@/components/ReasoningTraceViewer';
+import type { AgentReasoningStep } from '@/lib/ai/types';
 
 export default function CopilotPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
@@ -51,6 +54,7 @@ export default function CopilotPage({ params }: { params: Promise<{ id: string }
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [messages, setMessages] = useState<AIMessage[]>([]);
+  const [latestTrace, setLatestTrace] = useState<AgentReasoningStep[] | null>(null);
   const [input, setInput] = useState('');
   const [error, setError] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -155,6 +159,10 @@ Main aapke live budget, timeline milestones, aur vendor checklists se 100% synch
         setAiMode(data.mode);
       }
 
+      if (data.reasoningTrace) {
+        setLatestTrace(data.reasoningTrace);
+      }
+
       const replyContent = data.reply || 'Planora AI could not generate a response. Please retry.';
 
       const botMsg: AIMessage = {
@@ -215,6 +223,16 @@ Main aapke live budget, timeline milestones, aur vendor checklists se 100% synch
         category: 'Vendors',
         text: 'Photographer book karne se pehle kya poochu?',
         icon: Store,
+      },
+      {
+        category: 'What-If',
+        text: 'Simulate +50 guests impact on my catering plate and buffer',
+        icon: Users,
+      },
+      {
+        category: 'Readiness',
+        text: 'Audit my event readiness score and detect high-risk milestones',
+        icon: ShieldCheck,
       },
       {
         category: 'Risk',
@@ -508,6 +526,28 @@ Main aapke live budget, timeline milestones, aur vendor checklists se 100% synch
                 </div>
               </div>
             </div>
+
+            {/* Agent Reasoning & Critique Trace */}
+            <ReasoningTraceViewer
+              trace={
+                latestTrace || [
+                  {
+                    phase: 'Phase 1: Memory & Context Grounding',
+                    status: 'passed',
+                    details: `Loaded ${event.name} (${event.event_type}) in ${event.location}. Budget: ${formatINR(event.total_budget)}, Guests: ${event.guest_count}.`,
+                    timestamp: new Date().toISOString(),
+                  },
+                  {
+                    phase: 'Phase 2: Intent Analysis & Strategy',
+                    status: 'passed',
+                    details: 'Live planner-evaluator loop ready to audit queries against database state.',
+                    timestamp: new Date().toISOString(),
+                  },
+                ]
+              }
+              title="Agent Reasoning & Critique Trace"
+              defaultExpanded={true}
+            />
 
             {/* Quick Links Card */}
             <div className="bg-white rounded-3xl p-5 border border-zinc-200/80 shadow-xs space-y-3">

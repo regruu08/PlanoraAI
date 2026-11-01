@@ -57,6 +57,8 @@ export async function POST(
       mode: process.env.GEMINI_API_KEY ? "ai" : "demo",
       aiStatus: result.mode,
       modelUsed: result.modelUsed,
+      evaluationScore: result.evaluationScore,
+      reasoningTrace: result.reasoningTrace,
     });
   } catch (err) {
     console.error("[generate-plan] Unhandled blueprint generation error:", err);

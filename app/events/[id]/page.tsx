@@ -8,6 +8,8 @@ import EventHeader from '@/components/EventHeader';
 import { PlanoraEvent, BudgetItem, Task, Vendor, Idea } from '@/types';
 import { getEventById, getBudgets, getTasks, getVendors, getIdeas, saveTask } from '@/lib/storage';
 import { formatINR, calculatePercentage } from '@/lib/utils';
+import EventReadinessCard from '@/components/EventReadinessCard';
+import WhatIfSimulator from '@/components/WhatIfSimulator';
 import { 
   Wallet, 
   Clock, 
@@ -111,6 +113,14 @@ export default function EventOverviewPage({ params }: { params: Promise<{ id: st
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         
+        {/* Event Readiness Health Score & Risk Detector */}
+        <EventReadinessCard
+          event={event}
+          budgets={budgets}
+          tasks={tasks}
+          vendors={vendors}
+        />
+
         {/* Core Section: "WHAT SHOULD I DO NEXT?" */}
         <section className="bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 rounded-3xl p-1 text-white shadow-lg shadow-rose-200/50">
           <div className="bg-white rounded-[22px] p-6 sm:p-7 text-zinc-900">
@@ -432,6 +442,13 @@ export default function EventOverviewPage({ params }: { params: Promise<{ id: st
           </div>
 
         </section>
+
+        {/* Interactive What-If Scenario Simulator */}
+        <WhatIfSimulator
+          event={event}
+          budgets={budgets}
+          onApplied={loadData}
+        />
 
       </main>
 

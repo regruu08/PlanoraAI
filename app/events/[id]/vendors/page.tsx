@@ -13,7 +13,8 @@ import {
   ShieldCheck, 
   CheckSquare, 
   Square, 
-  X
+  X,
+  Search
 } from 'lucide-react';
 
 export default function VendorsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,6 +23,8 @@ export default function VendorsPage({ params }: { params: Promise<{ id: string }
 
   const [event, setEvent] = useState<PlanoraEvent | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   
   // Add vendor modal
   const [showAddVendor, setShowAddVendor] = useState(false);
@@ -151,6 +154,16 @@ export default function VendorsPage({ params }: { params: Promise<{ id: string }
     loadData();
   };
 
+  const filteredVendors = vendors.filter((v) => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      v.vendor_type.toLowerCase().includes(q) ||
+      (v.name && v.name.toLowerCase().includes(q));
+    const matchesStatus = statusFilter === 'all' || v.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   const statusOptions: { label: string; value: VendorStatus; color: string }[] = [
     { label: 'Needed', value: 'needed', color: 'bg-zinc-100 text-zinc-700' },
     { label: 'Shortlisted', value: 'shortlisted', color: 'bg-amber-50 text-amber-700' },
@@ -185,6 +198,36 @@ export default function VendorsPage({ params }: { params: Promise<{ id: string }
             <Plus className="w-4 h-4" />
             <span>Add Vendor Category</span>
           </button>
+        </div>
+
+        {/* Search & Status Filter Toolbar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-zinc-200/80 shadow-xs">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search vendor types or company names..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-zinc-200 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+            />
+          </div>
+
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 text-xs font-semibold">
+            {['all', 'needed', 'contacted', 'quote_received', 'confirmed'].map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-1 rounded-xl capitalize transition-colors shrink-0 ${
+                  statusFilter === st
+                    ? 'bg-zinc-900 text-white'
+                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                }`}
+              >
+                {st === 'all' ? 'All' : st.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Add Vendor Modal */}
@@ -269,8 +312,19 @@ export default function VendorsPage({ params }: { params: Promise<{ id: string }
         )}
 
         {/* Vendors Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {vendors.map((vendor) => {
+        {filteredVendors.length === 0 ? (
+          <div className="p-12 text-center bg-white rounded-3xl border border-zinc-200/80">
+            <p className="text-zinc-500 text-sm font-medium">No vendors match your search or status filter.</p>
+            <button
+              onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}
+              className="mt-3 px-4 py-1.5 rounded-xl bg-zinc-100 text-zinc-700 text-xs font-bold hover:bg-zinc-200"
+            >
+              Clear Filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredVendors.map((vendor) => {
             const completedCount = vendor.checklist?.filter((c) => c.is_completed).length || 0;
             const totalCount = vendor.checklist?.length || 0;
             const pct = calculatePercentage(completedCount, totalCount);
@@ -458,7 +512,8 @@ export default function VendorsPage({ params }: { params: Promise<{ id: string }
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
 
       </main>
 
